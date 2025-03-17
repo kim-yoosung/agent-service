@@ -6,9 +6,9 @@
   <version>1.0-SNAPSHOT</version>
 
   <properties>
-    <java.version>21</java.version>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
   </properties>
-
   <dependencies>
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -28,7 +28,16 @@
       <version>1.14.6</version>
     </dependency>
     <!-- SLF4J & Logback -->
-
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>2.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.4.12</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -44,17 +53,24 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <shadedArtifactAttached>true</shadedArtifactAttached>
-              <shadedClassifierName>shaded</shadedClassifierName>
-              <createDependencyReducedPom>true</createDependencyReducedPom>
               <transformers>
+                <!-- MANIFEST.MF 파일에 Premain-Class 추가 -->
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Premain-Class>com.example.agent.AgentMain</Premain-Class>
-                    <Can-Redefine-Classes>true</Can-Redefine-Classes>
                   </manifestEntries>
                 </transformer>
               </transformers>
+              <relocations>
+                <relocation>
+                  <pattern>org.slf4j</pattern>
+                  <shadedPattern>com.example.shaded.slf4j</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>ch.qos.logback</pattern>
+                  <shadedPattern>com.example.shaded.logback</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>

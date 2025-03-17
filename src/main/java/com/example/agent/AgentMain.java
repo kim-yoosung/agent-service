@@ -5,16 +5,18 @@ import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.agent.builder.AgentBuilder;
 
 import java.lang.instrument.Instrumentation;
+import java.util.logging.Logger;
 
 public class AgentMain {
+    private static final Logger logger = Logger.getLogger("AgentLogger");
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("🌟 API Request/Response Wrapper Agent Started!");
 
         new AgentBuilder.Default()
-                .type(ElementMatchers.hasSuperType(ElementMatchers.named("javax.servlet.Filter"))) // Filter 인터페이스 구현체 감지
+                .type(ElementMatchers.nameContains("Filter"))  // Filter 인터페이스를 구현한 클래스 후킹
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
-                        builder.method(ElementMatchers.named("doFilter")) // doFilter() 메서드 감지
-                                .intercept(Advice.to(FilterInterceptor.class))) // FilterInterceptor 적용
-                .installOn(inst);
+                        builder.visit(Advice.to(FilterAdvice.class)
+                                .on(ElementMatchers.named("doFilter"))) // doFilter 메서드 후킹
+                ).installOn(inst);
     }
 }
