@@ -10,12 +10,6 @@
     <maven.compiler.target>11</maven.compiler.target>
   </properties>
   <dependencies>
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>4.0.1</version>
-      <scope>provided</scope>
-    </dependency>
     <!-- ByteBuddy -->
     <dependency>
       <groupId>net.bytebuddy</groupId>
@@ -26,6 +20,12 @@
       <groupId>net.bytebuddy</groupId>
       <artifactId>byte-buddy-agent</artifactId>
       <version>1.14.6</version>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>5.0.0</version> <!-- MSA 서비스에 맞는 버전 선택 -->
+      <scope>compile</scope>
     </dependency>
     <!-- SLF4J & Logback -->
     <dependency>

@@ -13,11 +13,7 @@ public class ServletContextHolder implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         servletContext = sce.getServletContext();
-        if (servletContext != null) {
-            logger.info("[Agent] 🚀 ServletContext 초기화 성공: " + servletContext.getClass().getName());
-        } else {
-            logger.severe("[Agent] ❌ ServletContext 초기화 실패! sce.getServletContext()가 null");
-        }
+        logger.info("[Agent] ServletContext 초기화됨!");
     }
 
     @Override
@@ -40,6 +36,4 @@ public class ServletContextHolder implements ServletContextListener {
             logger.info("[Agent] ServletContext 강제 등록됨!");
         }
     }
-
-
 }
