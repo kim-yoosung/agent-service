@@ -7,11 +7,13 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.logging.Logger;
 
 public class DispatcherServletAdvice {
 
-//    private static final Logger logger = Logger.getLogger(DispatcherServletAdvice.class.getName());
+    private static final Logger logger = Logger.getLogger(DispatcherServletAdvice.class.getName());
 
     @Advice.OnMethodEnter
     public static void onEnter(@Advice.AllArguments Object[] args) {
@@ -25,7 +27,10 @@ public class DispatcherServletAdvice {
             try {
                 // 요청 바디 저장 (Wrapper 활용)
                 CustomRequestWrapper httpRequest = new CustomRequestWrapper(request);
+
+                System.out.println("[agent]" +  httpRequest);
                 CustomResponseWrapper httpResponse = new CustomResponseWrapper(response);
+                System.out.println("[agent]" +  httpResponse);
 
                 WiremockDTO wiremockDTO = buildWireMockDTO(httpRequest, httpResponse);
 
@@ -37,7 +42,7 @@ public class DispatcherServletAdvice {
         }
     }
 
-    private static void callDispatcherServlet(HttpServletRequest request, HttpServletResponse response) {
+    public static void callDispatcherServlet(HttpServletRequest request, HttpServletResponse response) {
         try {
             Object dispatcherServletObj = request.getServletContext().getAttribute("dispatcherServlet");
 
@@ -56,10 +61,11 @@ public class DispatcherServletAdvice {
         }
     }
 
-    private static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
+    public static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
         WiremockDTO wiremockDTO = new WiremockDTO();
         wiremockDTO.setRequest(getWireMockReqDTO(request));
-//        wiremockDTO.setResponse();
+        wiremockDTO.setResponse(getWireMockResDTO(response));
+        System.out.println("[agent - wiremock]" +  wiremockDTO);
 
         return wiremockDTO;
     }
@@ -92,11 +98,18 @@ public class DispatcherServletAdvice {
         return reqDTO;
     }
 
+    public static WireMockResDTO getWireMockResDTO(CustomResponseWrapper response) throws IOException {
+        WireMockResDTO resDTO = new WireMockResDTO();
+        resDTO.setBody(new String(response.toByteArray(), StandardCharsets.UTF_8));
+        resDTO.setHeaders(Collections.singletonMap("Content-Type", "application/json"));
+        resDTO.setStatus(response.getStatus());
+        return resDTO;
+    }
 
     /**
      * 요청 바디를 JSON 형식으로 변환
      */
-    private static List<Map<String, String>> buildBodyPatterns(CustomRequestWrapper request) throws IOException {
+    public static List<Map<String, String>> buildBodyPatterns(CustomRequestWrapper request) throws IOException {
         StringBuilder body = new StringBuilder();
 
         try (BufferedReader reader = request.getReader()) {
@@ -113,7 +126,7 @@ public class DispatcherServletAdvice {
     }
 
 
-    private static void captureResponse(CustomResponseWrapper responseWrapper, WiremockDTO wiremockDTO) throws IOException {
+    public static void captureResponse(CustomResponseWrapper responseWrapper, WiremockDTO wiremockDTO) throws IOException {
         byte[] responseBody = responseWrapper.toByteArray();
         WireMockResDTO resDTO = new WireMockResDTO();
         resDTO.setStatus(responseWrapper.getStatus());
@@ -121,7 +134,7 @@ public class DispatcherServletAdvice {
         wiremockDTO.setResponse(resDTO);
     }
 
-    private static void logWiremockDTO(WiremockDTO wiremockDTO) {
+    public static void logWiremockDTO(WiremockDTO wiremockDTO) {
         System.out.println("[Agent] WiremockDTO: " + wiremockDTO);
     }
 }
