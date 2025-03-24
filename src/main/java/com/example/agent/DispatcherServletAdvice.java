@@ -1,6 +1,10 @@
 package com.example.agent;
 
 import com.example.tracing.apitracing.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.bytebuddy.asm.Advice;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +17,10 @@ import java.util.logging.Logger;
 
 public class DispatcherServletAdvice {
 
-    private static final Logger logger = Logger.getLogger(DispatcherServletAdvice.class.getName());
+//    private static final Logger logger = Logger.getLogger(DispatcherServletAdvice.class.getName());
+    public static final ThreadLocal<WiremockDTO> wiremockHolder = new ThreadLocal<>();
+    public static final ThreadLocal<CustomResponseWrapper> responseWrapperHolder = new ThreadLocal<>();
+
 
     @Advice.OnMethodEnter
     public static void onEnter(@Advice.AllArguments Object[] args) {
@@ -28,13 +35,17 @@ public class DispatcherServletAdvice {
                 // 요청 바디 저장 (Wrapper 활용)
                 CustomRequestWrapper httpRequest = new CustomRequestWrapper(request);
 
-                System.out.println("[agent]" +  httpRequest);
                 CustomResponseWrapper httpResponse = new CustomResponseWrapper(response);
-                System.out.println("[agent]" +  httpResponse);
 
-                WiremockDTO wiremockDTO = buildWireMockDTO(httpRequest, httpResponse);
+                WireMockReqDTO reqDTO = getWireMockReqDTO(httpRequest);
+                WireMockResDTO resDTO = new WireMockResDTO();
 
-                callDispatcherServlet(httpRequest, httpResponse);
+                WiremockDTO wiremockDTO = new WiremockDTO();
+                wiremockDTO.setRequest(reqDTO);
+                wiremockDTO.setResponse(resDTO);
+
+                wiremockHolder.set(wiremockDTO);
+                responseWrapperHolder.set(httpResponse);
 
             } catch (IOException e) {
                 System.err.println("[Agent] 요청 바디 읽기 실패: " + e.getMessage());
@@ -42,30 +53,60 @@ public class DispatcherServletAdvice {
         }
     }
 
-    public static void callDispatcherServlet(HttpServletRequest request, HttpServletResponse response) {
+    @Advice.OnMethodExit(onThrowable = Throwable.class)
+    public static void onExit(@Advice.AllArguments Object[] args, @Advice.Thrown Throwable t) {
         try {
-            Object dispatcherServletObj = request.getServletContext().getAttribute("dispatcherServlet");
+            WiremockDTO dto = wiremockHolder.get();
+            CustomResponseWrapper resWrapper = responseWrapperHolder.get();
 
-            if (dispatcherServletObj == null) {
-                System.err.println("[Agent] DispatcherServlet을 찾을 수 없습니다!");
-                return;
+            if (dto != null && resWrapper != null) {
+                captureResponse(resWrapper, dto);
+                logWiremockDTO(dto);
             }
-
-            // Reflection을 사용하여 service() 메서드 실행
-            Class<?> dispatcherClass = dispatcherServletObj.getClass();
-            java.lang.reflect.Method serviceMethod = dispatcherClass.getMethod("service", HttpServletRequest.class, HttpServletResponse.class);
-            serviceMethod.invoke(dispatcherServletObj, request, response);
-
         } catch (Exception e) {
-            System.err.println("[Agent] DispatcherServlet 호출 중 오류 발생: " + e.getMessage());
+            System.err.println("[Agent] 로깅 중 예외 발생: " + e.getMessage());
+        } finally {
+            wiremockHolder.remove();
+            responseWrapperHolder.remove();
         }
+    }
+
+    public static void captureResponse(CustomResponseWrapper responseWrapper, WiremockDTO dto) throws IOException {
+        byte[] responseBody = responseWrapper.toByteArray();
+        String responseBodyString = new String(responseBody, "UTF-8");
+
+        dto.getResponse().setBody(responseBodyString);
+        dto.getResponse().setStatus(responseWrapper.getStatus());
+        dto.getResponse().setHeaders(Map.of("Content-Type", "application/json")); // 필요한 경우 실제 헤더 추출
+    }
+
+    public static void logWiremockDTO(WiremockDTO wiremockDTO) throws IOException {
+
+        System.out.println("[Agent] >>> 로깅 시작");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+        JsonNode rootNode = objectMapper.valueToTree(wiremockDTO);
+
+        if ("GET".equalsIgnoreCase(wiremockDTO.getRequest().getMethod())) {
+            ((ObjectNode) rootNode.get("request")).remove("bodyPatterns");
+        }
+
+        if (wiremockDTO.getRequest().getUrl().contains("?")) {
+            ((ObjectNode) rootNode.get("request")).remove("urlPattern");
+        } else {
+            ((ObjectNode) rootNode.get("request")).remove("url");
+        }
+
+        String jsonString = objectMapper.writeValueAsString(rootNode);
+        System.out.println("[Agent] WiremockDTO 로그:\n" + jsonString);
     }
 
     public static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
         WiremockDTO wiremockDTO = new WiremockDTO();
         wiremockDTO.setRequest(getWireMockReqDTO(request));
         wiremockDTO.setResponse(getWireMockResDTO(response));
-        System.out.println("[agent - wiremock]" +  wiremockDTO);
 
         return wiremockDTO;
     }
@@ -125,16 +166,4 @@ public class DispatcherServletAdvice {
         return Collections.singletonList(map);
     }
 
-
-    public static void captureResponse(CustomResponseWrapper responseWrapper, WiremockDTO wiremockDTO) throws IOException {
-        byte[] responseBody = responseWrapper.toByteArray();
-        WireMockResDTO resDTO = new WireMockResDTO();
-        resDTO.setStatus(responseWrapper.getStatus());
-        resDTO.setBody(new String(responseBody, "UTF-8"));
-        wiremockDTO.setResponse(resDTO);
-    }
-
-    public static void logWiremockDTO(WiremockDTO wiremockDTO) {
-        System.out.println("[Agent] WiremockDTO: " + wiremockDTO);
-    }
 }
