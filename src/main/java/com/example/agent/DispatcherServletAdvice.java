@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 public class DispatcherServletAdvice {
 
-//    private static final Logger logger = Logger.getLogger(DispatcherServletAdvice.class.getName());
+//    public static final Logger logger = Logger.getLogger(DispatcherServletAdvice.class.getName());
     public static final ThreadLocal<WiremockDTO> wiremockHolder = new ThreadLocal<>();
     public static final ThreadLocal<CustomResponseWrapper> responseWrapperHolder = new ThreadLocal<>();
 
@@ -28,10 +28,13 @@ public class DispatcherServletAdvice {
             HttpServletRequest request = (HttpServletRequest) args[0];
             HttpServletResponse response = (HttpServletResponse) args[1];
 
-            System.out.println("[Agent] >>> 요청: [" + request.getMethod() + "] " + request.getRequestURI());
-            System.out.println("[Agent] >>> 응답 상태: [" + response.getStatus() + "] ");
+//            logger.info("[Agent] >>> 요청: [" + request.getMethod() + "] " + request.getRequestURI());
+//            System.out.println("[Agent] >>> 응답 상태: [" + response.getStatus() + "] ");
 
             try {
+
+                DynamicLogFileGenerator.initLogger();
+
                 // 요청 바디 저장 (Wrapper 활용)
                 CustomRequestWrapper httpRequest = new CustomRequestWrapper(request);
 
@@ -68,6 +71,8 @@ public class DispatcherServletAdvice {
         } finally {
             wiremockHolder.remove();
             responseWrapperHolder.remove();
+
+            DynamicLogFileGenerator.finishLogger();
         }
     }
 
@@ -82,7 +87,7 @@ public class DispatcherServletAdvice {
 
     public static void logWiremockDTO(WiremockDTO wiremockDTO) throws IOException {
 
-        System.out.println("[Agent] >>> 로깅 시작");
+        DynamicLogFileGenerator.log("[Agent] >>> 로깅 시작");
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -100,7 +105,7 @@ public class DispatcherServletAdvice {
         }
 
         String jsonString = objectMapper.writeValueAsString(rootNode);
-        System.out.println("[Agent] WiremockDTO 로그:\n" + jsonString);
+        DynamicLogFileGenerator.log("[Agent] WiremockDTO 로그:\n" + jsonString);
     }
 
     public static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
