@@ -1,4 +1,4 @@
-package com.example.tracing.apitracing;
+package com.example.tracing.logging;
 
 import java.io.BufferedWriter;
 import java.io.File;

@@ -1,5 +1,7 @@
 package com.example.agent;
 
+import com.example.tracing.apitracing.DispatcherServletAdvice;
+import com.example.tracing.dbtracing.PrepareStatementAdvice;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -13,6 +15,7 @@ public class AgentMain {
     public static void premain(String agentArgs, Instrumentation inst) {
         logger.info("[Agent] 🚀 자바 에이전트 시작됨, Spring Boot 실행 대기 중...");
 
+        // 1. DispatcherServlet.doDispatch() 후킹
         new AgentBuilder.Default()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .ignore(ElementMatchers.none())
@@ -20,6 +23,17 @@ public class AgentMain {
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder.method(ElementMatchers.named("doDispatch"))
                                 .intercept(Advice.to(DispatcherServletAdvice.class))
+                )
+                .installOn(inst);
+
+        // 2. java.sql.Connection.prepareStatement() 후킹
+        new AgentBuilder.Default()
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .ignore(ElementMatchers.none())
+                .type(ElementMatchers.isSubTypeOf(java.sql.Connection.class))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
+                        builder.method(ElementMatchers.named("prepareStatement"))
+                                .intercept(Advice.to(PrepareStatementAdvice.class))
                 )
                 .installOn(inst);
     }

@@ -1,6 +1,6 @@
-package com.example.agent;
+package com.example.tracing.apitracing;
 
-import com.example.tracing.apitracing.*;
+import com.example.tracing.logging.DynamicLogFileGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -13,11 +13,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.logging.Logger;
 
 public class DispatcherServletAdvice {
 
-//    public static final Logger logger = Logger.getLogger(DispatcherServletAdvice.class.getName());
     public static final ThreadLocal<WiremockDTO> wiremockHolder = new ThreadLocal<>();
     public static final ThreadLocal<CustomResponseWrapper> responseWrapperHolder = new ThreadLocal<>();
 
@@ -28,16 +26,11 @@ public class DispatcherServletAdvice {
             HttpServletRequest request = (HttpServletRequest) args[0];
             HttpServletResponse response = (HttpServletResponse) args[1];
 
-//            logger.info("[Agent] >>> 요청: [" + request.getMethod() + "] " + request.getRequestURI());
-//            System.out.println("[Agent] >>> 응답 상태: [" + response.getStatus() + "] ");
-
             try {
 
                 DynamicLogFileGenerator.initLogger();
 
-                // 요청 바디 저장 (Wrapper 활용)
                 CustomRequestWrapper httpRequest = new CustomRequestWrapper(request);
-
                 CustomResponseWrapper httpResponse = new CustomResponseWrapper(response);
 
                 WireMockReqDTO reqDTO = getWireMockReqDTO(httpRequest);
@@ -51,7 +44,7 @@ public class DispatcherServletAdvice {
                 responseWrapperHolder.set(httpResponse);
 
             } catch (IOException e) {
-                System.err.println("[Agent] 요청 바디 읽기 실패: " + e.getMessage());
+                System.err.println("요청 바디 읽기 실패: " + e.getMessage());
             }
         }
     }
@@ -67,7 +60,7 @@ public class DispatcherServletAdvice {
                 logWiremockDTO(dto);
             }
         } catch (Exception e) {
-            System.err.println("[Agent] 로깅 중 예외 발생: " + e.getMessage());
+            System.err.println("로깅 중 예외 발생: " + e.getMessage());
         } finally {
             wiremockHolder.remove();
             responseWrapperHolder.remove();
@@ -87,7 +80,7 @@ public class DispatcherServletAdvice {
 
     public static void logWiremockDTO(WiremockDTO wiremockDTO) throws IOException {
 
-        DynamicLogFileGenerator.log("[Agent] >>> 로깅 시작");
+        DynamicLogFileGenerator.log(">>> 로깅 시작");
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -105,7 +98,7 @@ public class DispatcherServletAdvice {
         }
 
         String jsonString = objectMapper.writeValueAsString(rootNode);
-        DynamicLogFileGenerator.log("[Agent] WiremockDTO 로그:\n" + jsonString);
+        DynamicLogFileGenerator.log(" WiremockDTO 로그:\n" + jsonString);
     }
 
     public static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
