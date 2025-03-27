@@ -1,6 +1,5 @@
 package com.example.tracing.dbtracing;
 
-import java.lang.reflect.Proxy;
 import java.sql.PreparedStatement;
 
 import com.example.tracing.logging.DynamicLogFileGenerator;
@@ -8,19 +7,21 @@ import net.bytebuddy.asm.Advice;
 
 public class PrepareStatementAdvice {
 
+
+    @Advice.OnMethodEnter
+    public static void onEnter(@Advice.Origin String method) {
+        System.out.println("[Agent] Entering method: " + method);
+    }
+
     @Advice.OnMethodExit
-    public static void onExit(@Advice.Return(readOnly = false) PreparedStatement stmt) {
+    public static void onExit(@Advice.Return PreparedStatement stmt) {
         try {
-            System.out.println("sql advice start!!!!");
             String rawSql = stmt.toString();
             String parsedSql = SqlUtils.extractSqlFromPreparedStatement(rawSql);
-
-            DynamicLogFileGenerator.log("[Agent - DB] SQL 실행: " + parsedSql);
-
+            DynamicLogFileGenerator.log("[Agent - DB] SQL: " + parsedSql);
         } catch (Exception e) {
-            System.err.println("[Agent - DB] 프록시 생성 실패: " + e.getMessage());
+            System.err.println("[Agent] SQL 로깅 실패: " + e.getMessage());
         }
-
-
     }
+
 }

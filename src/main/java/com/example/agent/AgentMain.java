@@ -31,7 +31,7 @@ public class AgentMain {
         new AgentBuilder.Default()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .ignore(ElementMatchers.none())
-                .type(ElementMatchers.isSubTypeOf(java.sql.Connection.class))
+                .type(ElementMatchers.isSubTypeOf(PreparedStatement.class))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder.method(ElementMatchers.named("prepareStatement"))
                                 .intercept(Advice.to(PrepareStatementAdvice.class))

@@ -29,22 +29,17 @@ public class DispatcherServletAdvice {
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onExit(@Advice.AllArguments Object[] args, @Advice.Thrown Throwable t) {
         if (args.length >= 2 &&
-                args[0] instanceof HttpServletRequest request &&
-                args[1] instanceof HttpServletResponse response) {
+                args[0] instanceof HttpServletRequest &&
+                args[1] instanceof HttpServletResponse) {
 
-            System.out.println("agent 111");
-            System.out.println("agent 222");
+            HttpServletRequest request = (HttpServletRequest) args[0];
+            HttpServletResponse response = (HttpServletResponse) args[1];
             try {
-                // 요청 바디는 여기서 복사용으로 래핑해서 읽음 (Spring이 다 읽은 뒤)
-
                 CustomRequestWrapper requestWrapper = new CustomRequestWrapper(request);
                 CustomResponseWrapper responseWrapper = new CustomResponseWrapper(response);
 
-                System.out.println("agent 333");
-
                 WireMockReqDTO reqDTO = getWireMockReqDTO(requestWrapper);
                 WireMockResDTO resDTO = new WireMockResDTO();
-                System.out.println("agent 444");
                 WiremockDTO dto = new WiremockDTO();
                 dto.setRequest(reqDTO);
                 dto.setResponse(resDTO);
@@ -64,10 +59,12 @@ public class DispatcherServletAdvice {
     public static void captureResponse(CustomResponseWrapper responseWrapper, WiremockDTO dto) throws IOException {
         byte[] responseBody = responseWrapper.toByteArray();
         String responseBodyString = new String(responseBody, "UTF-8");
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
 
         dto.getResponse().setBody(responseBodyString);
         dto.getResponse().setStatus(responseWrapper.getStatus());
-        dto.getResponse().setHeaders(Map.of("Content-Type", "application/json")); // 필요한 경우 실제 헤더 추출
+        dto.getResponse().setHeaders(headers);
     }
 
     public static void logWiremockDTO(WiremockDTO wiremockDTO) throws IOException {
