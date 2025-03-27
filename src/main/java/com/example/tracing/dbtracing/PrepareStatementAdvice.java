@@ -1,21 +1,26 @@
-//package com.example.tracing.dbtracing;
-//
-//import java.lang.reflect.Proxy;
-//import java.sql.PreparedStatement;
-//
-//import net.bytebuddy.asm.Advice;
-//
-//public class PrepareStatementAdvice {
-//
-//    @Advice.OnMethodExit
-//    public static void onExit(@Advice.Return(readOnly = false) PreparedStatement stmt) {
-//
-//        System.out.println("[DB tracing] >>> 요청");
-//        // 반환되는 PreparedStatement를 Proxy로 감싸기
-//        stmt = (PreparedStatement) Proxy.newProxyInstance(
-//                stmt.getClass().getClassLoader(),
-//                stmt.getClass().getInterfaces(),
-//                new PreparedStatementProxyHandler(stmt)
-//        );
-//    }
-//}
+package com.example.tracing.dbtracing;
+
+import java.lang.reflect.Proxy;
+import java.sql.PreparedStatement;
+
+import com.example.tracing.logging.DynamicLogFileGenerator;
+import net.bytebuddy.asm.Advice;
+
+public class PrepareStatementAdvice {
+
+    @Advice.OnMethodExit
+    public static void onExit(@Advice.Return(readOnly = false) PreparedStatement stmt) {
+        try {
+            System.out.println("sql advice start!!!!");
+            String rawSql = stmt.toString();
+            String parsedSql = SqlUtils.extractSqlFromPreparedStatement(rawSql);
+
+            DynamicLogFileGenerator.log("[Agent - DB] SQL 실행: " + parsedSql);
+
+        } catch (Exception e) {
+            System.err.println("[Agent - DB] 프록시 생성 실패: " + e.getMessage());
+        }
+
+
+    }
+}
