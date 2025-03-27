@@ -19,55 +19,45 @@ public class DispatcherServletAdvice {
     public static final ThreadLocal<WiremockDTO> wiremockHolder = new ThreadLocal<>();
     public static final ThreadLocal<CustomResponseWrapper> responseWrapperHolder = new ThreadLocal<>();
 
+
     @Advice.OnMethodEnter
     public static void onEnter(@Advice.AllArguments Object[] args) {
-        DynamicLogFileGenerator.initLogger();
-////                CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
-//
-//            CustomResponseWrapper wrappedResponse = new CustomResponseWrapper(response);
-//
-////                WireMockReqDTO reqDTO = getWireMockReqDTO(wrappedRequest);
-//            WireMockResDTO resDTO = new WireMockResDTO();
-//
-//            WiremockDTO wiremockDTO = new WiremockDTO();
-////                wiremockDTO.setRequest(reqDTO);
-//            wiremockDTO.setResponse(resDTO);
-//
-//            wiremockHolder.set(wiremockDTO);
-//            responseWrapperHolder.set(wrappedResponse);
 
+        DynamicLogFileGenerator.initLogger();
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
-    public static void onExit(@Advice.AllArguments Object[] args, @Advice.Thrown Throwable t) throws IOException {
-        try {
-            System.out.println("로깅 중 111");
-            HttpServletRequest request = (HttpServletRequest) args[0];
-            HttpServletResponse response = (HttpServletResponse) args[1];
+    public static void onExit(@Advice.AllArguments Object[] args, @Advice.Thrown Throwable t) {
+        if (args.length >= 2 &&
+                args[0] instanceof HttpServletRequest request &&
+                args[1] instanceof HttpServletResponse response) {
 
-            // 여기서 안전하게 바디 복사 (이미 Spring이 처리 끝난 상태)
-            System.out.println("로깅 중 222");
-            CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
-            CustomResponseWrapper wrappedResponse = new CustomResponseWrapper(response);
-            System.out.println("로깅 중 22333");
+            System.out.println("agent 111");
+            System.out.println("agent 222");
+            try {
+                // 요청 바디는 여기서 복사용으로 래핑해서 읽음 (Spring이 다 읽은 뒤)
 
-            WireMockReqDTO reqDTO = getWireMockReqDTO(wrappedRequest);
+                CustomRequestWrapper requestWrapper = new CustomRequestWrapper(request);
+                CustomResponseWrapper responseWrapper = new CustomResponseWrapper(response);
 
-            WiremockDTO dto = new WiremockDTO();
-            dto.setRequest(reqDTO);
-            dto.setResponse(new WireMockResDTO());
-            System.out.println("로깅 중 333");
-            captureResponse(wrappedResponse, dto);
-            System.out.println("로깅 중 444");
-            logWiremockDTO(dto);
-            System.out.println("로깅 중 555");
+                System.out.println("agent 333");
 
-    } catch (Exception e) {
-            System.err.println("로깅 중 예외 발생: " + e.getMessage());
-        } finally {
-            wiremockHolder.remove();
-            responseWrapperHolder.remove();
-            DynamicLogFileGenerator.finishLogger();
+                WireMockReqDTO reqDTO = getWireMockReqDTO(requestWrapper);
+                WireMockResDTO resDTO = new WireMockResDTO();
+                System.out.println("agent 444");
+                WiremockDTO dto = new WiremockDTO();
+                dto.setRequest(reqDTO);
+                dto.setResponse(resDTO);
+                captureResponse(responseWrapper, dto);
+                logWiremockDTO(dto);
+
+            } catch (Exception e) {
+                System.err.println("[Agent] 로깅 중 예외 발생: " + e.getMessage());
+            } finally {
+                wiremockHolder.remove();
+                responseWrapperHolder.remove();
+                DynamicLogFileGenerator.finishLogger();
+            }
         }
     }
 
