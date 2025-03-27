@@ -1,7 +1,7 @@
 package com.example.agent;
 
 import com.example.tracing.apitracing.DispatcherServletAdvice;
-import com.example.tracing.dbtracing.PrepareStatementAdvice;
+import com.example.tracing.dbtracing.PrepareStatementExecuteAdvice;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -33,8 +33,10 @@ public class AgentMain {
                 .ignore(ElementMatchers.none())
                 .type(ElementMatchers.isSubTypeOf(PreparedStatement.class))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
-                        builder.method(ElementMatchers.named("prepareStatement"))
-                                .intercept(Advice.to(PrepareStatementAdvice.class))
+                        builder.method(ElementMatchers.named("execute")
+                                        .or(ElementMatchers.named("executeQuery"))
+                                        .or(ElementMatchers.named("executeUpdate")))
+                                .intercept(Advice.to(PrepareStatementExecuteAdvice.class))
                 )
                 .installOn(inst);
     }
