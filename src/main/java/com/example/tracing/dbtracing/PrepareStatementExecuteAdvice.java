@@ -63,12 +63,10 @@ public class PrepareStatementExecuteAdvice {
             previousQuery = sql.replaceAll("\\r?\\n", "");
             DynamicLogFileGenerator.log("Executing SQL: " + previousQuery);
 
-            // 전 쿼리 SELECT 생성 및 실행, 파일 경로 반환
+            // select query 생성 & Prep query 파일 생성
             String writtenBlobFilePath = generatePreProcessingQuery(stmt, args, sql);
 
-            // 마지막에 로그 출력은 여기서
             DynamicLogFileGenerator.log("Prep query: " + writtenBlobFilePath);
-
         } catch (Exception e) {
             System.out.println("[Agent] 전 쿼리 로깅 실패");
         } finally {

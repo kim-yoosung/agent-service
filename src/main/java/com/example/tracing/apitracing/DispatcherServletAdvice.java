@@ -69,7 +69,7 @@ public class DispatcherServletAdvice {
 
     public static void logWiremockDTO(WiremockDTO wiremockDTO) throws IOException {
 
-        DynamicLogFileGenerator.log(">>> 로깅 시작");
+        System.out.println("[agent] >>> 로깅 시작");
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -87,16 +87,16 @@ public class DispatcherServletAdvice {
         }
 
         String jsonString = objectMapper.writeValueAsString(rootNode);
-        DynamicLogFileGenerator.log(" WiremockDTO 로그:\n" + jsonString);
+        DynamicLogFileGenerator.log(" IncomingReqResFilter:\n" + jsonString);
     }
 
-    public static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
-        WiremockDTO wiremockDTO = new WiremockDTO();
-        wiremockDTO.setRequest(getWireMockReqDTO(request));
-        wiremockDTO.setResponse(getWireMockResDTO(response));
-
-        return wiremockDTO;
-    }
+//    public static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
+//        WiremockDTO wiremockDTO = new WiremockDTO();
+//        wiremockDTO.setRequest(getWireMockReqDTO(request));
+//        wiremockDTO.setResponse(getWireMockResDTO(response));
+//
+//        return wiremockDTO;
+//    }
 
     public static WireMockReqDTO getWireMockReqDTO(CustomRequestWrapper request) throws IOException {
         WireMockReqDTO reqDTO = new WireMockReqDTO();
@@ -140,6 +140,7 @@ public class DispatcherServletAdvice {
     public static List<Map<String, String>> buildBodyPatterns(CustomRequestWrapper request) throws IOException {
         StringBuilder body = new StringBuilder();
 
+        System.out.println("request !!!!" + request.getReader());
         try (BufferedReader reader = request.getReader()) {
             String line;
             while ((line = reader.readLine()) != null) {
