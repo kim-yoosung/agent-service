@@ -19,7 +19,7 @@ public class CustomRequestWrapper extends HttpServletRequestWrapper {
     public CustomRequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
 
-        // 1. 요청 인코딩 설정 확인 (없으면 기본값 UTF-8 사용)
+        // 요청 인코딩 설정 확인 (없으면 기본값 UTF-8 사용)
         String characterEncoding = request.getCharacterEncoding();
         if (StringUtils.isBlank(characterEncoding)) {
             characterEncoding = StandardCharsets.UTF_8.name();
@@ -67,7 +67,6 @@ public class CustomRequestWrapper extends HttpServletRequestWrapper {
         return servletInputStream;
     }
 
-    // 5. getReader() 오버라이드하여 저장된 데이터를 Reader 형태로 제공
     @Override
     public BufferedReader getReader() throws IOException {
         return new BufferedReader(new InputStreamReader(this.getInputStream(), this.encoding));

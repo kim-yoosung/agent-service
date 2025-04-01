@@ -11,48 +11,59 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class DispatcherServletAdvice {
 
     public static final ThreadLocal<WiremockDTO> wiremockHolder = new ThreadLocal<>();
+    public static final ThreadLocal<CustomRequestWrapper> requestWrapperHolder = new ThreadLocal<>();
     public static final ThreadLocal<CustomResponseWrapper> responseWrapperHolder = new ThreadLocal<>();
 
-
     @Advice.OnMethodEnter
-    public static void onEnter(@Advice.AllArguments Object[] args) {
+    public static void onEnter(@Advice.Argument(value = 0, readOnly = false) HttpServletRequest request,
+                               @Advice.Argument(value = 1, readOnly = false) HttpServletResponse response) {
+        try {
+            DynamicLogFileGenerator.initLogger();
 
-        DynamicLogFileGenerator.initLogger();
+            CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
+            CustomResponseWrapper wrappedResponse = new CustomResponseWrapper(response);
+
+            request = wrappedRequest;
+            response = wrappedResponse;
+
+            requestWrapperHolder.set(wrappedRequest);
+            responseWrapperHolder.set(wrappedResponse);
+
+        } catch (Exception e) {
+            System.err.println("[Agent] OnEnter 오류: " + e.getMessage());
+        }
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
-    public static void onExit(@Advice.AllArguments Object[] args, @Advice.Thrown Throwable t) {
-        if (args.length >= 2 &&
-                args[0] instanceof HttpServletRequest &&
-                args[1] instanceof HttpServletResponse) {
+    public static void onExit(@Advice.Thrown Throwable t) {
+        try {
+            CustomRequestWrapper requestWrapper = requestWrapperHolder.get();
+            CustomResponseWrapper responseWrapper = responseWrapperHolder.get();
 
-            HttpServletRequest request = (HttpServletRequest) args[0];
-            HttpServletResponse response = (HttpServletResponse) args[1];
-            try {
-                CustomRequestWrapper requestWrapper = new CustomRequestWrapper(request);
-                CustomResponseWrapper responseWrapper = new CustomResponseWrapper(response);
+            if (requestWrapper == null || responseWrapper == null) return;
 
-                WireMockReqDTO reqDTO = getWireMockReqDTO(requestWrapper);
-                WireMockResDTO resDTO = new WireMockResDTO();
-                WiremockDTO dto = new WiremockDTO();
-                dto.setRequest(reqDTO);
-                dto.setResponse(resDTO);
-                captureResponse(responseWrapper, dto);
-                logWiremockDTO(dto);
+            WireMockReqDTO reqDTO = getWireMockReqDTO(requestWrapper);
+            WireMockResDTO resDTO = new WireMockResDTO();
 
-            } catch (Exception e) {
-                System.err.println("[Agent] 로깅 중 예외 발생: " + e.getMessage());
-            } finally {
-                wiremockHolder.remove();
-                responseWrapperHolder.remove();
-                DynamicLogFileGenerator.finishLogger();
-            }
+            WiremockDTO dto = new WiremockDTO();
+            dto.setRequest(reqDTO);
+            dto.setResponse(resDTO);
+
+            captureResponse(responseWrapper, dto);
+            logWiremockDTO(dto);
+
+        } catch (Exception e) {
+            System.err.println("[Agent] OnExit 로깅 오류: " + e.getMessage());
+        } finally {
+            wiremockHolder.remove();
+            requestWrapperHolder.remove();
+            responseWrapperHolder.remove();
+            DynamicLogFileGenerator.finishLogger();
         }
     }
 
@@ -90,30 +101,23 @@ public class DispatcherServletAdvice {
         DynamicLogFileGenerator.log(" IncomingReqResFilter:\n" + jsonString);
     }
 
-//    public static WiremockDTO buildWireMockDTO(CustomRequestWrapper request, CustomResponseWrapper response) throws IOException {
-//        WiremockDTO wiremockDTO = new WiremockDTO();
-//        wiremockDTO.setRequest(getWireMockReqDTO(request));
-//        wiremockDTO.setResponse(getWireMockResDTO(response));
-//
-//        return wiremockDTO;
-//    }
 
     public static WireMockReqDTO getWireMockReqDTO(CustomRequestWrapper request) throws IOException {
         WireMockReqDTO reqDTO = new WireMockReqDTO();
 
-        // 1. HTTP 메서드 설정
+        // HTTP 메서드 설정
         reqDTO.setMethod(request.getMethod());
 
-        // 2. URI 및 URI 패턴 설정
+        // URI 및 URI 패턴 설정
         String fullUri = request.getRequestURL().toString();
         if (request.getQueryString() != null) {
             fullUri = fullUri + "?" + request.getQueryString();
         }
         reqDTO.setUrl(fullUri);
-        reqDTO.setUriPattern(fullUri);  // URI 패턴이 필요한 경우
+        reqDTO.setUriPattern(fullUri);
         reqDTO.setBody(buildBodyPatterns(request));
 
-        // 4. 헤더 정보 저장
+        // 헤더 정보 저장
         Map<String, String> headerMap = new HashMap<>(Collections.singletonMap("Content-Type", "application/json"));
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -126,17 +130,6 @@ public class DispatcherServletAdvice {
         return reqDTO;
     }
 
-    public static WireMockResDTO getWireMockResDTO(CustomResponseWrapper response) throws IOException {
-        WireMockResDTO resDTO = new WireMockResDTO();
-        resDTO.setBody(new String(response.toByteArray(), StandardCharsets.UTF_8));
-        resDTO.setHeaders(Collections.singletonMap("Content-Type", "application/json"));
-        resDTO.setStatus(response.getStatus());
-        return resDTO;
-    }
-
-    /**
-     * 요청 바디를 JSON 형식으로 변환
-     */
     public static List<Map<String, String>> buildBodyPatterns(CustomRequestWrapper request) throws IOException {
         StringBuilder body = new StringBuilder();
 
@@ -153,5 +146,4 @@ public class DispatcherServletAdvice {
 
         return Collections.singletonList(map);
     }
-
 }
