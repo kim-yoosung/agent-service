@@ -8,13 +8,11 @@ import net.bytebuddy.matcher.ElementMatchers;
 
 import java.lang.instrument.Instrumentation;
 import java.sql.PreparedStatement;
-import java.util.logging.Logger;
 
 public class AgentMain {
-    private static final Logger logger = Logger.getLogger(AgentMain.class.getName());
 
     public static void premain(String agentArgs, Instrumentation inst) {
-        logger.info("[Agent] 🚀 자바 에이전트 시작됨, Spring Boot 실행 대기 중...");
+        System.out.println("[Agent] 🚀 자바 에이전트 시작됨, Spring Boot 실행 대기 중...");
 
         // 1. DispatcherServlet.doDispatch() 후킹
         new AgentBuilder.Default()
