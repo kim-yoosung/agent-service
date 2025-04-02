@@ -25,6 +25,7 @@ public class PrepareStatementExecuteAdvice {
                                @Advice.Origin Method method,
                                @Advice.AllArguments Object[] args) {
         try {
+            System.out.println("[Agent] DB tracing start");
             boolean isTarget = isTargetQuery(stmt);
 
             if (isTarget) {

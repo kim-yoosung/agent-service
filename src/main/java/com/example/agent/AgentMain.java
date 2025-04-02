@@ -1,8 +1,8 @@
 package com.example.agent;
 
 import com.example.tracing.apitracing.DispatcherServletAdvice;
-import com.example.tracing.outgingtracing.RestTemplateInterceptor;
 import com.example.tracing.dbtracing.PrepareStatementExecuteAdvice;
+import com.example.tracing.outgingtracing.RestTemplateInterceptor;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.MethodDelegation;
@@ -29,11 +29,12 @@ public class AgentMain {
                 )
                 .installOn(inst);
 
-//         OutgoingHttp 후킹
+        // OutgoingHttp 후킹
         new AgentBuilder.Default()
-                .type(ElementMatchers.named("org.springframework.web.client.RestTemplate"))
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .type(named("org.springframework.web.client.RestTemplate"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
-                        builder.method(ElementMatchers.named("doExecute"))
+                        builder.method(named("doExecute"))
                                 .intercept(MethodDelegation.to(RestTemplateInterceptor.class))
                 )
                 .installOn(inst);

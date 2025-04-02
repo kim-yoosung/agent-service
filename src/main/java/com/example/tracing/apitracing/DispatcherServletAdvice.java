@@ -19,6 +19,7 @@ public class DispatcherServletAdvice {
                                @Advice.Argument(value = 1, readOnly = false) HttpServletResponse response) {
         try {
             DynamicLogFileGenerator.initLogger();
+            System.out.println("[Agent] DispatcherServletAdvice start");
 
             CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
             CustomResponseWrapper wrappedResponse = new CustomResponseWrapper(response);
