@@ -18,7 +18,7 @@ public class AgentMain {
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("[Agent] 🚀 자바 에이전트 시작됨, Spring Boot 실행 대기 중...");
 
-        // DispatcherServlet.doDispatch() 후킹
+        // DispatcherServlet 후킹
         new AgentBuilder.Default()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .ignore(ElementMatchers.none())
@@ -39,7 +39,7 @@ public class AgentMain {
                 )
                 .installOn(inst);
 
-        // 2. java.sql.Connection.prepareStatement() 후킹
+        // DB Connection 후킹
         new AgentBuilder.Default()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .ignore(ElementMatchers.none())

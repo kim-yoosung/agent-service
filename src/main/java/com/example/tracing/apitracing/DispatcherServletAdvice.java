@@ -1,5 +1,8 @@
 package com.example.tracing.apitracing;
 
+import com.example.tracing.dto.WireMockReqDTO;
+import com.example.tracing.dto.WireMockResDTO;
+import com.example.tracing.dto.WiremockDTO;
 import com.example.tracing.logging.DynamicLogFileGenerator;
 import net.bytebuddy.asm.Advice;
 import jakarta.servlet.http.HttpServletRequest;

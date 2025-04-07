@@ -1,5 +1,7 @@
 package com.example.tracing.apitracing;
 
+import com.example.tracing.dto.WireMockReqDTO;
+import com.example.tracing.dto.WiremockDTO;
 import com.example.tracing.logging.DynamicLogFileGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

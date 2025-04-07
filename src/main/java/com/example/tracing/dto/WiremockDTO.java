@@ -1,4 +1,4 @@
-package com.example.tracing.apitracing;
+package com.example.tracing.dto;
 
 public class WiremockDTO {
 

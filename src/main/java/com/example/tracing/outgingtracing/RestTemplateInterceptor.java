@@ -1,12 +1,12 @@
 package com.example.tracing.outgingtracing;
 
 import net.bytebuddy.implementation.bind.annotation.*;
-import org.springframework.http.HttpMethod;
 
 
-import java.lang.reflect.Method;
-import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
+
+import static com.example.tracing.outgingtracing.OutgingUtils.filterInactiveUrl;
 
 public class RestTemplateInterceptor {
 
@@ -15,18 +15,41 @@ public class RestTemplateInterceptor {
                                    @AllArguments Object[] args) throws Exception {
 
         Object uri = args[0];
-        Object httpMethod = args[1];
+        Object httpMethod = args[2];
 
-        System.out.println("📤 [Agent] 요청 URI: " + uri);
-        System.out.println("📤 [Agent] HTTP Method: " + (httpMethod != null ? httpMethod.toString() : "null"));
+        String uriStr = filterInactiveUrl(uri.toString());
+        System.out.println("[agent - interceptor] uri " + uriStr);
+        System.out.println("[agent - interceptor] httpMethod " + httpMethod);
 
-        try {
-            Object response = zuper.call();
-            System.out.println("📥 [Agent] 응답 성공");
-            return response;
-        } catch (Exception e) {
-            System.out.println("❌ [Agent] 예외 발생: " + e.getMessage());
-            throw e;
+        String serviceName = OutgingUtils.extractServiceName(uriStr);
+        System.out.println("[agent - interceptor] serviceName" + serviceName);
+
+        // if true 인 경우 요청을 빈값으로 보내는 작업 필요
+        if (OutgingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
+            return zuper.call(); // 요청 무시
         }
+        Object responseObj = zuper.call(); // 요청 실행
+
+        ClientHttpResponseWrapper wrappedResponse = new ClientHttpResponseWrapper(responseObj);
+
+        System.out.println("📥 상태코드: " + wrappedResponse.getStatusCode());
+        System.out.println("📥 헤더: " + wrappedResponse.getHeaders());
+        System.out.println("📥 바디: " + new String(wrappedResponse.getBodyBytes(), StandardCharsets.UTF_8));
+
+
+        // 응답 감싸기 및 Wiremock 저장
+//        if (responseObj instanceof org.springframework.http.client.ClientHttpResponse) {
+//            org.springframework.http.client.ClientHttpResponse original =
+//                    (org.springframework.http.client.ClientHttpResponse) responseObj;
+//
+//            ClientHttpResponseWrapper wrappedResponse = new ClientHttpResponseWrapper(original);
+//
+//            OutgingUtils.handleWiremockLogging(args, wrappedResponse, uriStr, serviceName);
+//            return wrappedResponse;
+//        }
+
+        return responseObj;
     }
+
+
 }
