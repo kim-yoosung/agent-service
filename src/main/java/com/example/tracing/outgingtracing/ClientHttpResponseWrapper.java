@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class ClientHttpResponseWrapper {
 
-    private final Object originalResponse;
+    public final Object originalResponse;
 
     public ClientHttpResponseWrapper(Object response) {
         this.originalResponse = response;
