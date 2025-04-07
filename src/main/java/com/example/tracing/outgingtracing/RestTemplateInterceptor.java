@@ -18,8 +18,6 @@ public class RestTemplateInterceptor {
         Object httpMethod = args[2];
 
         String uriStr = filterInactiveUrl(uri.toString());
-        System.out.println("[agent - interceptor] uri " + uriStr);
-        System.out.println("[agent - interceptor] httpMethod " + httpMethod);
 
         String serviceName = OutgingUtils.extractServiceName(uriStr);
         System.out.println("[agent - interceptor] serviceName" + serviceName);
@@ -31,10 +29,13 @@ public class RestTemplateInterceptor {
         Object responseObj = zuper.call(); // 요청 실행
 
         ClientHttpResponseWrapper wrappedResponse = new ClientHttpResponseWrapper(responseObj);
+//
+//        System.out.println("📥 상태코드: " + wrappedResponse.getStatusCode());
+//        System.out.println("📥 헤더: " + wrappedResponse.getHeaders());
+//        System.out.println("📥 바디: " + new String(wrappedResponse.getBodyBytes(), StandardCharsets.UTF_8));
 
-        System.out.println("📥 상태코드: " + wrappedResponse.getStatusCode());
-        System.out.println("📥 헤더: " + wrappedResponse.getHeaders());
-        System.out.println("📥 바디: " + new String(wrappedResponse.getBodyBytes(), StandardCharsets.UTF_8));
+//        OutgingUtils.handleWiremockLogging(args, wrappedResponse, serviceName);
+
 
 
         // 응답 감싸기 및 Wiremock 저장
@@ -48,8 +49,6 @@ public class RestTemplateInterceptor {
 //            return wrappedResponse;
 //        }
 
-        return responseObj;
+        return wrappedResponse;
     }
-
-
 }
