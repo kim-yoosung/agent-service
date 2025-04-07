@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -45,9 +46,9 @@ public class IncomingReqResFilter {
         }
 
         String jsonString = objectMapper.writeValueAsString(rootNode);
-        DynamicLogFileGenerator.log(" IncomingReqResFilter:\n" + jsonString);
+        String jsonPath = createJsonFile(jsonString);
+        DynamicLogFileGenerator.log("IncomingReqResFilter:" + jsonPath);
     }
-
 
     public static WireMockReqDTO getWireMockReqDTO(CustomRequestWrapper request) throws IOException {
         WireMockReqDTO reqDTO = new WireMockReqDTO();
@@ -93,4 +94,16 @@ public class IncomingReqResFilter {
         return Collections.singletonList(map);
     }
 
+    public static String createJsonFile(String jsonString) {
+        String filePath = "logs/" + "filter-" + System.currentTimeMillis() + ".json";
+
+        try (FileWriter writer = new FileWriter(filePath)) {
+            writer.write(jsonString);
+            System.out.println(filePath + " created successfully");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return filePath;
+    }
 }

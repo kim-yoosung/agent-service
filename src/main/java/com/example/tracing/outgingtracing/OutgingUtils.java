@@ -12,6 +12,7 @@ import org.springframework.http.HttpRequest;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -66,14 +67,9 @@ public class OutgingUtils {
     }
 
     public static void handleWiremockLogging(Object[] args,
-                                             ClientHttpResponseWrapper response,
-                                             String uri, String serviceName) {
+                                             ClientHttpResponseWrapper response) {
         try {
-            HttpRequest request = (HttpRequest) args[2]; // 실제 사용 시 확인 필요
-            byte[] body = (byte[]) args[3];
-
-            WiremockDTO wiremockDTO = buildWiremockDTO(request, body, response, uri);
-//            String title = generateTitle(serviceName, method);
+            WiremockDTO wiremockDTO = buildWiremockDTO(args, response);
             saveAsJson(wiremockDTO);
 
         } catch (Exception e) {
@@ -81,21 +77,26 @@ public class OutgingUtils {
         }
     }
 
-    public static WiremockDTO buildWiremockDTO(HttpRequest request, byte[] body,
-                                    ClientHttpResponseWrapper response, String uri) throws Exception {
+    public static WiremockDTO buildWiremockDTO(Object[] args, ClientHttpResponseWrapper wrappedResponse) throws Exception {
 
         WiremockDTO wiremockDTO = new WiremockDTO();
 
+        Object uri = args[0];
+        Object httpMethod = args[2];
+
         WireMockReqDTO reqDTO = new WireMockReqDTO();
-        reqDTO.setUrl(uri);
-        reqDTO.setUriPattern(uri);
-        reqDTO.setMethod(request.getMethodValue());
-//        reqDTO.setBody(buildBodyPatterns(body));
+        reqDTO.setUrl(uri.toString());
+        reqDTO.setUriPattern(uri.toString());
+        reqDTO.setMethod(httpMethod.toString());
+
+        System.out.println("📥 상태코드: " + wrappedResponse.getStatusCode());
+        System.out.println("📥 헤더: " + wrappedResponse.getHeaders());
+        System.out.println("📥 바디: " + new String(wrappedResponse.getBodyBytes(), StandardCharsets.UTF_8));
 
         WireMockResDTO resDTO = new WireMockResDTO();
-//        resDTO.setStatus(response.getStatusCode().value());
-//        resDTO.setHeaders(Collections.singletonMap("Content-Type", "application/json"));
-//        resDTO.setBody(response.getBodyAsString());
+        resDTO.setStatus(wrappedResponse.getStatusCode());
+        resDTO.setHeaders(Collections.singletonMap("Content-Type", "application/json"));
+        resDTO.setBody(new String(wrappedResponse.getBodyBytes(), StandardCharsets.UTF_8));
 
         wiremockDTO.setRequest(reqDTO);
         wiremockDTO.setResponse(resDTO);
@@ -111,7 +112,7 @@ public class OutgingUtils {
 
         String jsonString = mapper.writeValueAsString(wiremockDTO);
         String jsonPath = createJsonFile(jsonString);
-        DynamicLogFileGenerator.log("Outging ReqResInterceptor: " + jsonPath);
+        DynamicLogFileGenerator.log("OutgingReqResInterceptor: " + jsonPath);
     }
 
     public static void modifyJsonNode(WiremockDTO wiremockDTO, JsonNode rootNode) {

@@ -32,10 +32,7 @@ public class RestTemplateInterceptor {
 
         ClientHttpResponseWrapper wrappedResponse = new ClientHttpResponseWrapper(responseObj);
 
-        System.out.println("📥 상태코드: " + wrappedResponse.getStatusCode());
-        System.out.println("📥 헤더: " + wrappedResponse.getHeaders());
-        System.out.println("📥 바디: " + new String(wrappedResponse.getBodyBytes(), StandardCharsets.UTF_8));
-
+        OutgingUtils.handleWiremockLogging(args, wrappedResponse);
 
         // 응답 감싸기 및 Wiremock 저장
 //        if (responseObj instanceof org.springframework.http.client.ClientHttpResponse) {

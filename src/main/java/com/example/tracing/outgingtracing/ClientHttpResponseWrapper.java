@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-// Agent 내부용: 의존성 없이 동작
 public class ClientHttpResponseWrapper {
 
     private final Object originalResponse;
