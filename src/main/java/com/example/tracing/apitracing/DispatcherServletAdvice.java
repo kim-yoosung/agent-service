@@ -5,9 +5,10 @@ import com.example.tracing.dto.WireMockResDTO;
 import com.example.tracing.dto.WiremockDTO;
 import com.example.tracing.logging.DynamicLogFileGenerator;
 import net.bytebuddy.asm.Advice;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.example.tracing.apitracing.IncomingReqResFilter.*;
 

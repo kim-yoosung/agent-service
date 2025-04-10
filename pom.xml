@@ -22,10 +22,10 @@
       <version>1.14.6</version>
     </dependency>
     <dependency>
-      <groupId>jakarta.servlet</groupId>
-      <artifactId>jakarta.servlet-api</artifactId>
-      <version>5.0.0</version> <!-- MSA 서비스에 맞는 버전 선택 -->
-      <scope>compile</scope>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>4.0.1</version> <!-- 또는 서비스에서 사용하는 서블릿 스펙 버전에 맞춰 선택 -->
+      <scope>provided</scope> <!-- 반드시 provided로 설정 -->
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

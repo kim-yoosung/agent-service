@@ -3,7 +3,6 @@ package com.example.tracing.outgingtracing;
 import net.bytebuddy.implementation.bind.annotation.*;
 
 
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 
 import static com.example.tracing.outgingtracing.OutgingUtils.filterInactiveUrl;
