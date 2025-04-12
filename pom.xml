@@ -24,13 +24,13 @@
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
-      <version>4.0.1</version> <!-- 또는 서비스에서 사용하는 서블릿 스펙 버전에 맞춰 선택 -->
-      <scope>provided</scope> <!-- 반드시 provided로 설정 -->
+      <version>4.0.1</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.15.3</version> <!-- 사용 중인 프로젝트에 맞게 버전 설정 -->
+      <version>2.15.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -46,8 +46,14 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
-      <version>5.3.32</version> <!-- 또는 서비스에서 사용하는 Spring 버전에 맞추기 -->
-      <scope>provided</scope> <!-- 필수: 서비스 MSA 내 spring-web 과 충돌 방지 -->
+      <version>5.3.32</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>5.3.27</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -74,6 +80,15 @@
                   </manifestEntries>
                 </transformer>
               </transformers>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <filters>
+                <filter>
+                  <artifact>javax.servlet:javax.servlet-api</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>

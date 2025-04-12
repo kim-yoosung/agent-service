@@ -1,8 +1,10 @@
 package com.example.tracing.outgingtracing;
 
 import net.bytebuddy.implementation.bind.annotation.*;
-
-
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpEntity;
+import org.springframework.web.client.ResponseExtractor;
+import java.net.URI;
 import java.util.concurrent.Callable;
 
 import static com.example.tracing.outgingtracing.OutgingUtils.filterInactiveUrl;
@@ -27,25 +29,20 @@ public class RestTemplateInterceptor {
         if (OutgingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
             return zuper.call(); // 요청 무시
         }
-        Object responseObj = zuper.call(); // 요청 실행
 
-        ClientHttpResponseWrapper wrappedResponse = new ClientHttpResponseWrapper(responseObj);
-
-        OutgingUtils.handleWiremockLogging(args, wrappedResponse);
+        // 원래 요청을 그대로 실행
+        Object responseObj = zuper.call();
 
         // 응답 감싸기 및 Wiremock 저장
-//        if (responseObj instanceof org.springframework.http.client.ClientHttpResponse) {
-//            org.springframework.http.client.ClientHttpResponse original =
-//                    (org.springframework.http.client.ClientHttpResponse) responseObj;
-//
-//            ClientHttpResponseWrapper wrappedResponse = new ClientHttpResponseWrapper(original);
-//
-//            OutgingUtils.handleWiremockLogging(args, wrappedResponse, uriStr, serviceName);
-//            return wrappedResponse;
-//        }
+        if (responseObj instanceof org.springframework.http.client.ClientHttpResponse) {
+            org.springframework.http.client.ClientHttpResponse original =
+                    (org.springframework.http.client.ClientHttpResponse) responseObj;
+
+            // 원래 응답을 그대로 사용하면서 로깅만 수행
+            OutgingUtils.handleWiremockLogging(args, new ClientHttpResponseWrapper(original));
+            return original; // 원래 응답을 그대로 반환
+        }
 
         return responseObj;
     }
-
-
 }

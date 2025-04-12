@@ -65,10 +65,35 @@ public class CustomRequestWrapper {
     }
 
     /**
-     * 요청 URI 추출
+     * 요청 URL 추출
      */
     public String getRequestURL() {
-        return invokeStringMethod("getRequestURI");
+        try {
+            StringBuilder url = new StringBuilder();
+            String scheme = invokeStringMethod("getScheme");
+            String serverName = invokeStringMethod("getServerName");
+            int serverPort = invokeIntMethod("getServerPort");
+            String contextPath = invokeStringMethod("getContextPath");
+            String servletPath = invokeStringMethod("getServletPath");
+            String pathInfo = invokeStringMethod("getPathInfo");
+            String queryString = invokeStringMethod("getQueryString");
+
+            url.append(scheme).append("://").append(serverName);
+            if (serverPort != 80 && serverPort != 443) {
+                url.append(":").append(serverPort);
+            }
+            url.append(contextPath).append(servletPath);
+            if (pathInfo != null) {
+                url.append(pathInfo);
+            }
+            if (queryString != null) {
+                url.append("?").append(queryString);
+            }
+            return url.toString();
+        } catch (Exception e) {
+            System.err.println("[Agent] ❌ RequestURL 생성 실패: " + e.getMessage());
+            return "";
+        }
     }
 
     /**
@@ -110,6 +135,15 @@ public class CustomRequestWrapper {
             return (String) m.invoke(request);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private int invokeIntMethod(String methodName) {
+        try {
+            Method method = request.getClass().getMethod(methodName);
+            return (int) method.invoke(request);
+        } catch (Exception e) {
+            return 0;
         }
     }
 
