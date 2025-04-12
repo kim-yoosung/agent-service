@@ -1,33 +1,115 @@
 package com.example.tracing.apitracing;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.*;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Enumeration;
 
-public class CustomRequestWrapper extends HttpServletRequestWrapper {
+public class CustomRequestWrapper {
 
-    private final Charset encoding;
+    private final Object request;  // javax.servlet.http.HttpServletRequest 인스턴스
     private final byte[] rawData;
+    private final Charset encoding;
 
-    public CustomRequestWrapper(HttpServletRequest request) throws IOException {
-        super(request);
+    public CustomRequestWrapper(Object request) {
+        this.request = request;
 
-        // 요청 인코딩 설정 확인 (없으면 기본값 UTF-8 사용)
-        String characterEncoding = request.getCharacterEncoding();
-        if (StringUtils.isBlank(characterEncoding)) {
+        String characterEncoding = invokeStringMethod("getCharacterEncoding");
+        if (characterEncoding == null || characterEncoding.isEmpty()) {
             characterEncoding = StandardCharsets.UTF_8.name();
         }
         this.encoding = Charset.forName(characterEncoding);
 
-        try (InputStream inputStream = request.getInputStream()) {
-            this.rawData = IOUtils.toByteArray(inputStream);
+        this.rawData = readRequestBody();
+    }
+
+    /**
+     * 요청 바디를 byte[]로 읽어 저장
+     */
+    private byte[] readRequestBody() {
+        try {
+            Method getInputStream = request.getClass().getMethod("getInputStream");
+            InputStream inputStream = (InputStream) getInputStream.invoke(request);
+            return IOUtils.toByteArray(inputStream);
+        } catch (Exception e) {
+            System.err.println("[Agent] ❌ RequestBody 읽기 실패: " + e.getMessage());
+            return new byte[0];
+        }
+    }
+
+    /**
+     * InputStream 반환 (rawData 기반)
+     */
+    public InputStream getInputStream() {
+        return new ByteArrayInputStream(rawData);
+    }
+
+    /**
+     * ServletInputStream 스타일로 반환 (Filter나 Interceptor에서 사용 가능하게끔)
+     */
+//    public Object getServletInputStream() {
+//        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(rawData);
+//
+//        return new ServletInputStreamAdapter(byteArrayInputStream);
+//    }
+
+    /**
+     * BufferedReader 반환
+     */
+    public BufferedReader getReader() {
+        return new BufferedReader(new InputStreamReader(getInputStream(), encoding));
+    }
+
+    /**
+     * 요청 URI 추출
+     */
+    public String getRequestURL() {
+        return invokeStringMethod("getRequestURI");
+    }
+
+    /**
+     * HTTP Method 추출
+     */
+    public String getMethod() {
+        return invokeStringMethod("getMethod");
+    }
+
+    public String getQueryString() {
+        return invokeStringMethod("getQueryString");
+    }
+
+    /**
+     * Header 추출
+     */
+    public String getHeader(String name) {
+        try {
+            Method method = request.getClass().getMethod("getHeader", String.class);
+            return (String) method.invoke(request, name);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Enumeration<String> getHeaderNames() {
+        try {
+            Method m = request.getClass().getMethod("getHeaderNames");
+            return (Enumeration<String>) m.invoke(request);
+        } catch (Exception e) {
+            return Collections.emptyEnumeration();
+        }
+    }
+
+    private String invokeStringMethod(String methodName) {
+        try {
+            Method m = request.getClass().getMethod(methodName);
+            return (String) m.invoke(request);
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -39,36 +121,7 @@ public class CustomRequestWrapper extends HttpServletRequestWrapper {
         return encoding;
     }
 
-    // 4. getInputStream() 오버라이드하여 저장된 데이터를 다시 읽을 수 있도록 함
-    @Override
-    public ServletInputStream getInputStream() {
-        final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(this.rawData);
-
-        ServletInputStream servletInputStream = new ServletInputStream(){
-            @Override
-            public int read() throws IOException {
-                return byteArrayInputStream.read();
-            }
-
-            @Override
-            public boolean isFinished() {
-                return false;
-            }
-
-            @Override
-            public boolean isReady() {
-                return false;
-            }
-
-            @Override
-            public void setReadListener(ReadListener readListener) {}
-        };
-
-        return servletInputStream;
-    }
-
-    @Override
-    public BufferedReader getReader() throws IOException {
-        return new BufferedReader(new InputStreamReader(this.getInputStream(), this.encoding));
+    public Object getOriginalRequest() {
+        return request;
     }
 }

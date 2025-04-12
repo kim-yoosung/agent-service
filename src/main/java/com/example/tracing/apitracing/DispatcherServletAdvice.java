@@ -6,10 +6,6 @@ import com.example.tracing.dto.WiremockDTO;
 import com.example.tracing.logging.DynamicLogFileGenerator;
 import net.bytebuddy.asm.Advice;
 
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import static com.example.tracing.apitracing.IncomingReqResFilter.*;
 
 public class DispatcherServletAdvice {
@@ -19,8 +15,8 @@ public class DispatcherServletAdvice {
     public static final ThreadLocal<CustomResponseWrapper> responseWrapperHolder = new ThreadLocal<>();
 
     @Advice.OnMethodEnter
-    public static void onEnter(@Advice.Argument(value = 0, readOnly = false) HttpServletRequest request,
-                               @Advice.Argument(value = 1, readOnly = false) HttpServletResponse response) {
+    public static void onEnter(@Advice.Argument(value = 0) Object request,
+                               @Advice.Argument(value = 1) Object response) {
         try {
             DynamicLogFileGenerator.initLogger();
             System.out.println("[Agent] DispatcherServletAdvice start");

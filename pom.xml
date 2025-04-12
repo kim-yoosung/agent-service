@@ -49,7 +49,6 @@
       <version>5.3.32</version> <!-- 또는 서비스에서 사용하는 Spring 버전에 맞추기 -->
       <scope>provided</scope> <!-- 필수: 서비스 MSA 내 spring-web 과 충돌 방지 -->
     </dependency>
-
   </dependencies>
 
   <build>
