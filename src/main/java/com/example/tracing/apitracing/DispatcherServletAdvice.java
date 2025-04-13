@@ -23,10 +23,10 @@ public class DispatcherServletAdvice {
                                  @This Object target,
                                  @AllArguments Object[] args,
                                  @SuperCall Callable<?> callable) throws Exception {
-        try {
-            DynamicLogFileGenerator.initLogger();
-            logger.info("[Agent] DispatcherServletAdvice start");
+        DynamicLogFileGenerator.initLogger();
+        DynamicLogFileGenerator.log("DispatcherServletAdvice 시작");
 
+        try {
             HttpServletRequest request = (HttpServletRequest) args[0];
             HttpServletResponse response = (HttpServletResponse) args[1];
 
@@ -55,6 +55,7 @@ public class DispatcherServletAdvice {
             return result;
 
         } catch (Exception e) {
+            DynamicLogFileGenerator.log("Intercept 오류: " + e.getMessage());
             logger.error("[Agent] Intercept 오류", e);
             throw e;
         } finally {
