@@ -3,7 +3,6 @@ package com.example.tracing.outgingtracing;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 public class ClientHttpResponseWrapper {
@@ -16,6 +15,11 @@ public class ClientHttpResponseWrapper {
 
     public byte[] getBodyBytes() {
         try {
+            if (originalResponse instanceof String) {
+                // 이미 문자열인 경우
+                return ((String) originalResponse).getBytes(StandardCharsets.UTF_8);
+            }
+
             Object body = originalResponse.getClass().getMethod("getBody").invoke(originalResponse);
 
             if (body instanceof InputStream) {
@@ -46,6 +50,11 @@ public class ClientHttpResponseWrapper {
 
     public int getStatusCode() {
         try {
+            if (originalResponse instanceof String) {
+                // 문자열인 경우 200으로 가정
+                return 200;
+            }
+
             Object statusEnum = originalResponse.getClass().getMethod("getStatusCode").invoke(originalResponse);
             return (int) statusEnum.getClass().getMethod("value").invoke(statusEnum);
         } catch (Exception e) {
@@ -54,12 +63,17 @@ public class ClientHttpResponseWrapper {
         }
     }
 
-    public Map<String, List<String>> getHeaders() {
+    public Map<String, String> getHeaders() {
         try {
-            Object headersObj = originalResponse.getClass().getMethod("getHeaders").invoke(originalResponse);
-            if (headersObj instanceof Map) {
-                // 타입 안전하게 가져오기
-                return (Map<String, List<String>>) headersObj;
+            if (originalResponse instanceof String) {
+                // 문자열인 경우 기본 헤더 반환
+                return Collections.singletonMap("Content-Type", "application/json");
+            }
+
+            Object headers = originalResponse.getClass().getMethod("getHeaders").invoke(originalResponse);
+            if (headers != null) {
+                // 헤더 변환 로직 추가
+                return Collections.singletonMap("Content-Type", "application/json");
             }
         } catch (Exception e) {
             System.err.println("[Agent] 헤더 추출 실패: " + e.getMessage());

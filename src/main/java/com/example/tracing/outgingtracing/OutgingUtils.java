@@ -82,16 +82,12 @@ public class OutgingUtils {
         WiremockDTO wiremockDTO = new WiremockDTO();
 
         Object uri = args[0];
-        Object httpMethod = args[2];
+        Object httpMethod = args[1];
 
         WireMockReqDTO reqDTO = new WireMockReqDTO();
         reqDTO.setUrl(uri.toString());
         reqDTO.setUriPattern(uri.toString());
         reqDTO.setMethod(httpMethod.toString());
-
-        System.out.println("📥 상태코드: " + wrappedResponse.getStatusCode());
-        System.out.println("📥 헤더: " + wrappedResponse.getHeaders());
-        System.out.println("📥 바디: " + new String(wrappedResponse.getBodyBytes(), StandardCharsets.UTF_8));
 
         WireMockResDTO resDTO = new WireMockResDTO();
         resDTO.setStatus(wrappedResponse.getStatusCode());
