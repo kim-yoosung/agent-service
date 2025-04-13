@@ -65,15 +65,15 @@ public class AgentMain {
                 .installOn(inst);
 
         // OutgoingHttp 후킹
-        new AgentBuilder.Default()
-                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                .with(listener)
-                .type(hasSuperType(named("org.springframework.web.client.RestTemplate")))
-                .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
-                        builder.method(named("doExecute"))
-                                .intercept(MethodDelegation.to(RestTemplateInterceptor.class))
-                )
-                .installOn(inst);
+//        new AgentBuilder.Default()
+//                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+//                .with(listener)
+//                .type(hasSuperType(named("org.springframework.web.client.RestTemplate")))
+//                .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
+//                        builder.method(named("doExecute"))
+//                                .intercept(MethodDelegation.to(RestTemplateInterceptor.class))
+//                )
+//                .installOn(inst);
 
         // DB Connection 후킹
         new AgentBuilder.Default()

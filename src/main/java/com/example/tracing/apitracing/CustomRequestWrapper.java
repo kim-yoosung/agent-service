@@ -8,14 +8,21 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 
-public class CustomRequestWrapper {
+public class CustomRequestWrapper extends HttpServletRequestWrapper {
 
     private final Object request;  // javax.servlet.http.HttpServletRequest 인스턴스
-    private final byte[] rawData;
     private final Charset encoding;
+    private final ByteArrayOutputStream cachedBytes;
+    private final ServletInputStream inputStream;
+    private BufferedReader reader;
 
-    public CustomRequestWrapper(Object request) {
+    public CustomRequestWrapper(HttpServletRequest request) {
+        super(request);
         this.request = request;
 
         String characterEncoding = invokeStringMethod("getCharacterEncoding");
@@ -24,28 +31,49 @@ public class CustomRequestWrapper {
         }
         this.encoding = Charset.forName(characterEncoding);
 
-        this.rawData = readRequestBody();
-    }
+        this.cachedBytes = new ByteArrayOutputStream();
+        this.inputStream = new ServletInputStream() {
+            @Override
+            public boolean isFinished() {
+                return false;
+            }
 
-    /**
-     * 요청 바디를 byte[]로 읽어 저장
-     */
-    private byte[] readRequestBody() {
-        try {
-            Method getInputStream = request.getClass().getMethod("getInputStream");
-            InputStream inputStream = (InputStream) getInputStream.invoke(request);
-            return IOUtils.toByteArray(inputStream);
-        } catch (Exception e) {
-            System.err.println("[Agent] ❌ RequestBody 읽기 실패: " + e.getMessage());
-            return new byte[0];
-        }
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+            @Override
+            public void setReadListener(ReadListener readListener) {
+                throw new UnsupportedOperationException("Not implemented");
+            }
+
+            @Override
+            public int read() throws IOException {
+                int data = request.getInputStream().read();
+                if (data != -1) {
+                    cachedBytes.write(data);
+                }
+                return data;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                int count = request.getInputStream().read(b, off, len);
+                if (count != -1) {
+                    cachedBytes.write(b, off, count);
+                }
+                return count;
+            }
+        };
     }
 
     /**
      * InputStream 반환 (rawData 기반)
      */
-    public InputStream getInputStream() {
-        return new ByteArrayInputStream(rawData);
+    @Override
+    public ServletInputStream getInputStream() throws IOException {
+        return inputStream;
     }
 
     /**
@@ -60,40 +88,20 @@ public class CustomRequestWrapper {
     /**
      * BufferedReader 반환
      */
-    public BufferedReader getReader() {
-        return new BufferedReader(new InputStreamReader(getInputStream(), encoding));
+    @Override
+    public BufferedReader getReader() throws IOException {
+        if (reader == null) {
+            reader = new BufferedReader(new InputStreamReader(getInputStream(), getCharacterEncoding()));
+        }
+        return reader;
     }
 
     /**
      * 요청 URL 추출
      */
-    public String getRequestURL() {
-        try {
-            StringBuilder url = new StringBuilder();
-            String scheme = invokeStringMethod("getScheme");
-            String serverName = invokeStringMethod("getServerName");
-            int serverPort = invokeIntMethod("getServerPort");
-            String contextPath = invokeStringMethod("getContextPath");
-            String servletPath = invokeStringMethod("getServletPath");
-            String pathInfo = invokeStringMethod("getPathInfo");
-            String queryString = invokeStringMethod("getQueryString");
-
-            url.append(scheme).append("://").append(serverName);
-            if (serverPort != 80 && serverPort != 443) {
-                url.append(":").append(serverPort);
-            }
-            url.append(contextPath).append(servletPath);
-            if (pathInfo != null) {
-                url.append(pathInfo);
-            }
-            if (queryString != null) {
-                url.append("?").append(queryString);
-            }
-            return url.toString();
-        } catch (Exception e) {
-            System.err.println("[Agent] ❌ RequestURL 생성 실패: " + e.getMessage());
-            return "";
-        }
+    @Override
+    public StringBuffer getRequestURL() {
+        return super.getRequestURL();
     }
 
     /**
@@ -147,15 +155,23 @@ public class CustomRequestWrapper {
         }
     }
 
-    public byte[] getRawData() {
-        return rawData;
-    }
-
     public Charset getEncoding() {
         return encoding;
     }
 
     public Object getOriginalRequest() {
         return request;
+    }
+
+    public byte[] getBody() {
+        return cachedBytes.toByteArray();
+    }
+
+    public String getBodyAsString() {
+        try {
+            return new String(getBody(), getCharacterEncoding());
+        } catch (UnsupportedEncodingException e) {
+            return new String(getBody());
+        }
     }
 }
