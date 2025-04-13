@@ -2,129 +2,146 @@ package com.example.tracing.dbtracing;
 
 import com.example.tracing.logging.DynamicLogFileGenerator;
 import net.bytebuddy.asm.Advice;
-import net.bytebuddy.implementation.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.concurrent.Callable;
 
 import static com.example.tracing.dbtracing.QueryGenerator.generateSelectQuery;
 
 public class PrepareStatementExecuteAdvice {
-    private static final Logger logger = LoggerFactory.getLogger(PrepareStatementExecuteAdvice.class);
     public static String previousQuery = "";
     public static final ThreadLocal<Boolean> isInternal = ThreadLocal.withInitial(() -> false);
 
-    @RuntimeType
-    public static Object intercept(@This Object obj,
-                                 @Origin Method method,
-                                 @AllArguments Object[] args,
-                                 @SuperCall Callable<?> callable) throws Exception {
-        PreparedStatement stmt = (PreparedStatement) obj;
+    @Advice.OnMethodEnter
+    public static void onEnter(@Advice.This PreparedStatement stmt,
+                               @Advice.Origin Method method,
+                               @Advice.AllArguments Object[] args) {
         try {
-            // 쿼리 실행 전 처리
-            onEnter(stmt, method, args);
+            System.out.println("[Agent] DB tracing start");
+            boolean isTarget = isTargetQuery(stmt);
 
-            // 원래 메서드 실행
-            Object result = callable.call();
+            if (isTarget) {
+                boolean needRollback = needRollback(method);
+                logQueryDetails(stmt, args); // 전 쿼리용 SELECT 실행 및 row 수 로깅
 
-            // 쿼리 실행 후 처리
-            if (result instanceof ResultSet && isTargetQuery(stmt)) {
-                ResultSet rs = (ResultSet) result;
-                File tempFile = File.createTempFile("query_result_", ".csv");
-                String filePath = exportToFile(tempFile, rs);
-                logger.info("[Agent] Query result exported to: {}", filePath);
+                if (needRollback) {
+                    stmt.getConnection().rollback();
+                } else {
+                    stmt.getConnection().commit();
+                }
             }
-
-            return result;
         } catch (Exception e) {
-            logger.error("[Agent] Error in SQL interception", e);
-            throw e;
+            System.out.println("[Agent] Advice 실행 중 예외 발생");
         }
     }
 
-    private static void onEnter(PreparedStatement stmt, Method method, Object[] args) {
-        try {
-            if (needRollback(method)) {
-                logger.info("[Agent] Skipping non-select query: {}", method.getName());
-                return;
-            }
+    public static boolean needRollback(Method method) {
+        return !method.getName().equals("executeQuery");
+    }
 
-            String query = generatePreProcessingQuery(stmt, args, method.getName());
-            logger.info("[Agent] Executing query: {}", query);
+    public static boolean isTargetQuery(PreparedStatement stmt) {
+        String sql = SqlUtils.extractSqlFromPreparedStatement(stmt.toString()).toLowerCase();
+        return !sql.contains("hibernate_sequence") &&
+                !sql.contains(".message") &&
+                !sql.contains("_seq") &&
+                !sql.contains("count(*)") &&
+                !sql.equals(previousQuery);
+    }
+
+    public static void logQueryDetails(PreparedStatement stmt, Object[] args) {
+        if (isInternal.get()) return;
+        try {
+            isInternal.set(true);
+            String sql = SqlUtils.extractSqlFromPreparedStatement(stmt.toString());
+            previousQuery = sql.replaceAll("\\r?\\n", "");
+            DynamicLogFileGenerator.log("Executing SQL: " + previousQuery);
+
+            // select query 생성 & Prep query 파일 생성
+            String writtenBlobFilePath = generatePreProcessingQuery(stmt, args, sql);
+
+            DynamicLogFileGenerator.log("Prep query: " + writtenBlobFilePath);
         } catch (Exception e) {
-            logger.error("[Agent] Error in query preprocessing", e);
+            System.out.println("[Agent] 전 쿼리 로깅 실패");
+        } finally {
+            isInternal.set(false);  // ✅ 플래그 해제
         }
     }
 
-    private static boolean needRollback(Method method) {
-        String methodName = method.getName().toLowerCase();
-        return methodName.contains("update") || 
-               methodName.contains("delete") || 
-               methodName.contains("insert");
-    }
+    public static String generatePreProcessingQuery(PreparedStatement stmt, Object[] args, String sql) {
+        String writtenBlobFilePath = "";
 
-    private static boolean isTargetQuery(PreparedStatement stmt) {
-        try {
-            String sql = stmt.toString().toLowerCase();
-            return sql.contains("select") && !sql.contains("dual");
-        } catch (Exception e) {
-            return false;
+
+        if (sql.toLowerCase().contains("insert")) {
+            return writtenBlobFilePath;
         }
-    }
 
-    private static String generatePreProcessingQuery(PreparedStatement stmt, Object[] args, String methodName) {
+        // 전 쿼리용 SELECT 생성
+        String selectQuery = generateSelectQuery(sql);
+        if (selectQuery == null) {
+            System.out.println("[Agent] 전 쿼리 SELECT 생성 실패");
+            return writtenBlobFilePath;
+        }
+
+        DynamicLogFileGenerator.log("Generated Select Query: " + selectQuery);
+
         try {
-            StringBuilder query = new StringBuilder();
-            query.append("Method: ").append(methodName).append("\n");
-            query.append("SQL: ").append(stmt.toString()).append("\n");
-            
-            if (args != null && args.length > 0) {
-                query.append("Parameters: ");
+            // 커넥션에서 SELECT용 PreparedStatement 생성
+            PreparedStatement selectStmt = stmt.getConnection().prepareStatement(
+                    selectQuery,
+                    ResultSet.TYPE_SCROLL_INSENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY
+            );
+
+            // 파라미터가 있으면 바인딩
+            if (args != null) {
                 for (int i = 0; i < args.length; i++) {
-                    query.append(args[i]).append(", ");
+                    selectStmt.setObject(i + 1, args[i]);
                 }
             }
-            
-            return query.toString();
+
+            // 쿼리 실행
+            ResultSet rs = selectStmt.executeQuery();
+
+            // 결과가 없으면 스킵
+            rs.last();
+            int rowCount = rs.getRow();
+            if (rowCount == 0) {
+                return "";
+            }
+            rs.beforeFirst();
+
+            // 파일 경로 생성
+            String fileName = "blob-" + System.currentTimeMillis() + ".dat";
+            File outFile = new File("logs", fileName);
+            outFile.getParentFile().mkdirs(); // logs 디렉토리 없을 경우 생성
+
+            // ResultSet을 파일로 저장
+            writtenBlobFilePath = exportToFile(outFile, rs);
+
         } catch (Exception e) {
-            return "Failed to generate query: " + e.getMessage();
+            System.out.println("[Agent] generatePreProcessingQuery 예외 발생: " + e.getMessage());
         }
+
+        return writtenBlobFilePath;
+    }
+    public static String exportToFile(File outFile, ResultSet rs) throws SQLException, IOException {
+        CachedRowSet crs = RowSetProvider.newFactory().createCachedRowSet();
+        crs.populate(rs);
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outFile))) {
+            oos.writeObject(crs);
+        }
+
+        return outFile.getAbsolutePath();
     }
 
-    private static String exportToFile(File file, ResultSet rs) throws SQLException, IOException {
-        try (FileWriter writer = new FileWriter(file)) {
-            if (rs == null || !rs.next()) {
-                return file.getAbsolutePath();
-            }
-
-            // Write headers
-            int columnCount = rs.getMetaData().getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
-                writer.append(rs.getMetaData().getColumnName(i));
-                if (i < columnCount) writer.append(',');
-            }
-            writer.append('\n');
-
-            // Write data
-            do {
-                for (int i = 1; i <= columnCount; i++) {
-                    writer.append(rs.getString(i));
-                    if (i < columnCount) writer.append(',');
-                }
-                writer.append('\n');
-            } while (rs.next());
-
-            return file.getAbsolutePath();
-        }
-    }
 }
-
 

@@ -9,6 +9,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
   <dependencies>
+
     <!-- ByteBuddy -->
     <dependency>
       <groupId>net.bytebuddy</groupId>
@@ -24,7 +25,7 @@
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>4.0.1</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -41,11 +42,17 @@
       <artifactId>commons-io</artifactId>
       <version>2.11.0</version>
     </dependency>
-    <!-- Spring Web -->
+    <!-- 에이전트 모듈의 pom.xml -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
       <version>5.3.32</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>5.3.27</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -74,6 +81,7 @@
             </goals>
             <configuration>
               <transformers>
+                <!-- MANIFEST.MF 파일에 Premain-Class 추가 -->
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Premain-Class>com.example.agent.AgentMain</Premain-Class>
@@ -85,11 +93,9 @@
               <createDependencyReducedPom>true</createDependencyReducedPom>
               <filters>
                 <filter>
-                  <artifact>*:*</artifact>
+                  <artifact>javax.servlet:javax.servlet-api</artifact>
                   <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/**</exclude>
                   </excludes>
                 </filter>
               </filters>
@@ -100,7 +106,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
