@@ -91,7 +91,6 @@ public class PrepareStatementExecuteAdvice {
         }
 
         DynamicLogFileGenerator.log("Generated Select Query: " + selectQuery);
-
         try {
             // 커넥션에서 SELECT용 PreparedStatement 생성
             PreparedStatement selectStmt = stmt.getConnection().prepareStatement(
