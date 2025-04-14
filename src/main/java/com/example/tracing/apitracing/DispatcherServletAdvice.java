@@ -5,8 +5,6 @@ import com.example.tracing.dto.WireMockResDTO;
 import com.example.tracing.dto.WiremockDTO;
 import com.example.tracing.logging.DynamicLogFileGenerator;
 import net.bytebuddy.implementation.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -16,8 +14,6 @@ import java.util.concurrent.Callable;
 import static com.example.tracing.apitracing.IncomingReqResFilter.*;
 
 public class DispatcherServletAdvice {
-    private static final Logger logger = LoggerFactory.getLogger(DispatcherServletAdvice.class);
-
     @RuntimeType
     public static Object intercept(@Origin Method method,
                                  @This Object target,
@@ -56,7 +52,8 @@ public class DispatcherServletAdvice {
 
         } catch (Exception e) {
             DynamicLogFileGenerator.log("Intercept 오류: " + e.getMessage());
-            logger.error("[Agent] Intercept 오류", e);
+            System.err.println("[Agent] Intercept 오류: " + e.getMessage());
+            e.printStackTrace();
             throw e;
         } finally {
             DynamicLogFileGenerator.finishLogger();
@@ -65,22 +62,19 @@ public class DispatcherServletAdvice {
 
     private static void logRequest(CustomRequestWrapper request) {
         try {
-            logger.info("Request: {} {} Body: {}", 
-                request.getMethod(), 
-                request.getRequestURI(),
-                request.getBodyAsString());
+            System.out.println("Request: " + request.getMethod() + " " + request.getRequestURI() + " Body: " + request.getBodyAsString());
         } catch (Exception e) {
-            logger.error("Error logging request", e);
+            System.err.println("Error logging request: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private static void logResponse(CustomResponseWrapper response) {
         try {
-            logger.info("Response: Status: {} Body: {}", 
-                response.getStatus(),
-                response.getBodyAsString());
+            System.out.println("Response: Status: " + response.getStatus() + " Body: " + new String(response.getBody(), "UTF-8"));
         } catch (Exception e) {
-            logger.error("Error logging response", e);
+            System.err.println("Error logging response: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
