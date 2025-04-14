@@ -60,13 +60,21 @@ public class PrepareStatementExecuteAdvice {
         if (isInternal.get()) return;
         try {
             isInternal.set(true);
-            String sql = SqlUtils.extractSqlFromPreparedStatement(stmt.toString());
-            previousQuery = sql.replaceAll("\\r?\\n", "");
-            DynamicLogFileGenerator.log("Executing SQL: " + previousQuery);
+            String sql = SqlUtils.extractSqlFromPreparedStatement(stmt.toString().trim());
+            String finalQuery;
+
+            // parameters: [ 가 포함된 경우 → 파라미터 바인딩 직접 수행
+            if (sql.contains("parameters: [")) {
+                finalQuery = SqlUtils.extractAndBindSql(sql);
+            } else {
+                finalQuery = sql;
+            }
+
+            previousQuery = finalQuery.replaceAll("\\r?\\n", "");
+            DynamicLogFileGenerator.log("Executing SQL: " + finalQuery);
 
             // select query 생성 & Prep query 파일 생성
             String writtenBlobFilePath = generatePreProcessingQuery(stmt, args, sql);
-
             DynamicLogFileGenerator.log("Prep query: " + writtenBlobFilePath);
         } catch (Exception e) {
             System.out.println("[Agent] 전 쿼리 로깅 실패");
@@ -92,30 +100,62 @@ public class PrepareStatementExecuteAdvice {
 
         DynamicLogFileGenerator.log("Generated Select Query: " + selectQuery);
         try {
+            // --- 커넥션 가져오기 로그 추가 --- 
+            java.sql.Connection connection = null;
+            try {
+                System.out.println("[Agent Debug] generatePreProcessingQuery: Attempting to get connection from original statement...");
+                connection = stmt.getConnection();
+                if (connection != null) {
+                    System.out.println("[Agent Debug] generatePreProcessingQuery: Connection obtained successfully. Closed: " + connection.isClosed());
+                } else {
+                    System.err.println("[Agent Error] generatePreProcessingQuery: stmt.getConnection() returned null!");
+                    return ""; // 커넥션 없으면 진행 불가
+                }
+            } catch (SQLException connEx) {
+                System.err.println("[Agent Error] generatePreProcessingQuery: SQLException while getting connection: " + connEx.getMessage());
+                connEx.printStackTrace();
+                return ""; // 커넥션 얻기 실패 시 진행 불가
+            }
+            // --- 로그 추가 끝 ---
+
+            System.out.println("[Agent Debug] generatePreProcessingQuery: Preparing select statement using the obtained connection...");
             // 커넥션에서 SELECT용 PreparedStatement 생성
-            PreparedStatement selectStmt = stmt.getConnection().prepareStatement(
+            PreparedStatement selectStmt = connection.prepareStatement(
                     selectQuery,
                     ResultSet.TYPE_SCROLL_INSENSITIVE,
                     ResultSet.CONCUR_READ_ONLY
             );
 
             // 파라미터가 있으면 바인딩
+            System.out.println("[Agent - DB] 바인딩 직전");
             if (args != null) {
                 for (int i = 0; i < args.length; i++) {
                     selectStmt.setObject(i + 1, args[i]);
                 }
             }
+            else {
+                System.out.println("[Agent - DB] 파라미터가 없음");
+            }
+
+            System.out.println("[Agent - DB] 쿼리 실행 직전");
 
             // 쿼리 실행
             ResultSet rs = selectStmt.executeQuery();
+            System.out.println("[Agent - DB] 쿼리 실행 직후");
+
 
             // 결과가 없으면 스킵
             rs.last();
             int rowCount = rs.getRow();
             if (rowCount == 0) {
+                System.out.println("[Agent - DB] rowCount 0");
                 return "";
             }
+            System.out.println("[Agent - DB] beforeFirst 0");
+
             rs.beforeFirst();
+            System.out.println("[Agent - DB] beforeFirst 1");
+
 
             // 파일 경로 생성
             String fileName = "blob-" + System.currentTimeMillis() + ".dat";

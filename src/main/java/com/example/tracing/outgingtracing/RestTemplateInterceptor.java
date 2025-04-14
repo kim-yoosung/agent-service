@@ -35,8 +35,7 @@ public class RestTemplateInterceptor {
             if (responseObj != null) {
                 // ResponseEntity 타입 체크
                 if (responseObj.getClass().getName().equals("org.springframework.http.ResponseEntity")) {
-                    System.out.println("[agent - interceptor] ResponseEntity detected");
-                    
+
                     // 리플렉션을 사용하여 getBody() 메서드 호출
                     Object body = responseObj.getClass().getMethod("getBody").invoke(responseObj);
                     if (body != null) {
