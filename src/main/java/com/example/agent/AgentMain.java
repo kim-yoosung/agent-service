@@ -52,15 +52,11 @@ public class AgentMain {
         // DispatcherServlet 후킹
         new AgentBuilder.Default()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                .with(listener)
                 .ignore(ElementMatchers.none())
-                .type(ElementMatchers.hasSuperType(named("org.springframework.web.servlet.DispatcherServlet")))
+                .type(named("org.springframework.web.servlet.DispatcherServlet"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
-                        builder.method(ElementMatchers.named("doDispatch")
-                                .and(ElementMatchers.takesArguments(2))
-                                .and(ElementMatchers.takesArgument(0, named("javax.servlet.http.HttpServletRequest")))
-                                .and(ElementMatchers.takesArgument(1, named("javax.servlet.http.HttpServletResponse"))))
-                                .intercept(MethodDelegation.to(DispatcherServletAdvice.class))
+                        builder.method(named("doDispatch"))
+                                .intercept(Advice.to(DispatcherServletAdvice.class))
                 )
                 .installOn(inst);
 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -15,7 +16,7 @@ import java.util.*;
 public class IncomingReqResFilter {
 
     public static void captureResponse(CustomResponseWrapper responseWrapper, WiremockDTO dto) throws IOException {
-        byte[] responseBody = responseWrapper.getBody();
+        byte[] responseBody = responseWrapper.toByteArray();
         String responseBodyString = new String(responseBody, "UTF-8");
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
@@ -26,6 +27,7 @@ public class IncomingReqResFilter {
     }
 
     public static void logWiremockDTO(WiremockDTO wiremockDTO) throws IOException {
+
         System.out.println("[agent] >>> 로깅 시작");
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -61,16 +63,10 @@ public class IncomingReqResFilter {
         }
         reqDTO.setUrl(fullUri);
         reqDTO.setUrlPattern(fullUri);
-
-        // 바디 설정
-        String bodyStr = request.getBodyAsString();
-        Map<String, String> bodyMap = new HashMap<>();
-        bodyMap.put("equalToJson", bodyStr);
-        reqDTO.setBody(Collections.singletonList(bodyMap));
+        reqDTO.setBody(buildBodyPatterns(request));
 
         // 헤더 정보 저장
-        Map<String, String> headerMap = new HashMap<>();
-        headerMap.put("Content-Type", "application/json");
+        Map<String, String> headerMap = new HashMap<>(Collections.singletonMap("Content-Type", "application/json"));
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
@@ -82,8 +78,20 @@ public class IncomingReqResFilter {
         return reqDTO;
     }
 
-    public static String buildRequestBody(CustomRequestWrapper request) throws IOException {
-        return request.getBodyAsString();
+    public static List<Map<String, String>> buildBodyPatterns(CustomRequestWrapper request) throws IOException {
+        StringBuilder body = new StringBuilder();
+
+        try (BufferedReader reader = request.getReader()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                body.append(line);
+            }
+        }
+
+        Map<String, String> map = new HashMap<>();
+        map.put("equalToJson", body.toString());
+
+        return Collections.singletonList(map);
     }
 
     public static String createJsonFile(String jsonString) {
