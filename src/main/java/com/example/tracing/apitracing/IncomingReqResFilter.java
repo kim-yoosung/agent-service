@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -61,7 +60,7 @@ public class IncomingReqResFilter {
             fullUri = fullUri + "?" + request.getQueryString();
         }
         reqDTO.setUrl(fullUri);
-        reqDTO.setUriPattern(fullUri);
+        reqDTO.setUrlPattern(fullUri);
 
         // 바디 설정
         String bodyStr = request.getBodyAsString();

@@ -19,6 +19,20 @@ public class DispatcherServletAdvice {
                                  @This Object target,
                                  @AllArguments Object[] args,
                                  @SuperCall Callable<?> callable) throws Exception {
+
+        // --- Swagger 요청 필터링 시작 ---
+        if (args != null && args.length >= 2 && args[0] instanceof HttpServletRequest) {
+            HttpServletRequest originalRequest = (HttpServletRequest) args[0];
+            String requestURI = originalRequest.getRequestURI();
+            if (requestURI != null && 
+                (requestURI.startsWith("/swagger-ui") || 
+                 requestURI.startsWith("/v3/api-docs") || 
+                 requestURI.startsWith("/swagger-resources") || 
+                 requestURI.endsWith("/swagger-config")
+                 )) {
+                return callable.call();
+            }
+        }
         DynamicLogFileGenerator.initLogger();
         DynamicLogFileGenerator.log("DispatcherServletAdvice 시작");
 

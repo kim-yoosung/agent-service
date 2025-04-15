@@ -1,5 +1,7 @@
 package com.example.tracing.dbtracing;
 
+import com.example.tracing.logging.DynamicLogFileGenerator;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -8,6 +10,7 @@ public class QueryGenerator {
 
         // update/delete query 에서 select 쿼리로 변환하여 현재값 알기
         sql = sql.toLowerCase().trim();
+
         if (sql.startsWith("update")) {
             System.out.println("update query!!!!!");
             String table = getTableNameFromUpdateQuery(sql);

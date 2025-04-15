@@ -22,10 +22,17 @@ public class SqlUtils {
 
     public static String extractAndBindSql(String raw) {
         try {
-            int paramStart = raw.indexOf("parameters: [");
+            int paramStart = raw.indexOf("parameters : [");
             String sqlPart = raw.substring(0, paramStart).trim();
 
+            System.out.println("[Agent - db] sqlPart!!! "+ sqlPart);
+
+            if (sqlPart.endsWith(",")) {
+                sqlPart = sqlPart.substring(0, sqlPart.length() - 1);
+            }
+
             if (sqlPart.startsWith("'") && sqlPart.endsWith("'")) {
+                System.out.println("[Agent - db] sqlPart2!!! "+ sqlPart);
                 sqlPart = sqlPart.substring(1, sqlPart.length() - 1).trim();
             }
 

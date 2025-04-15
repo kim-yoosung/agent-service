@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.springframework.http.HttpRequest;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -86,7 +85,7 @@ public class OutgingUtils {
 
         WireMockReqDTO reqDTO = new WireMockReqDTO();
         reqDTO.setUrl(uri.toString());
-        reqDTO.setUriPattern(uri.toString());
+        reqDTO.setUrlPattern(uri.toString());
         reqDTO.setMethod(httpMethod.toString());
 
         WireMockResDTO resDTO = new WireMockResDTO();

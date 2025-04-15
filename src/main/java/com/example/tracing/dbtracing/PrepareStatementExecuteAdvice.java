@@ -64,7 +64,7 @@ public class PrepareStatementExecuteAdvice {
             String finalQuery;
 
             // parameters: [ 가 포함된 경우 → 파라미터 바인딩 직접 수행
-            if (sql.contains("parameters: [")) {
+            if (sql.contains("parameters : [")) {
                 finalQuery = SqlUtils.extractAndBindSql(sql);
             } else {
                 finalQuery = sql;
@@ -74,12 +74,12 @@ public class PrepareStatementExecuteAdvice {
             DynamicLogFileGenerator.log("Executing SQL: " + finalQuery);
 
             // select query 생성 & Prep query 파일 생성
-            String writtenBlobFilePath = generatePreProcessingQuery(stmt, args, sql);
+            String writtenBlobFilePath = generatePreProcessingQuery(stmt, args, finalQuery);
             DynamicLogFileGenerator.log("Prep query: " + writtenBlobFilePath);
         } catch (Exception e) {
             System.out.println("[Agent] 전 쿼리 로깅 실패");
         } finally {
-            isInternal.set(false);  // ✅ 플래그 해제
+            isInternal.set(false);
         }
     }
 

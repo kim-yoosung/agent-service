@@ -6,7 +6,7 @@ import java.util.Map;
 public class WireMockReqDTO {
     private String method;
     private String url;
-    private String uriPattern;
+    private String urlPattern;
     private Map<String, String> headers;
     private List<Map<String, String>> body;
 
@@ -26,12 +26,12 @@ public class WireMockReqDTO {
         this.url = url;
     }
 
-    public String getUriPattern() {
-        return uriPattern;
+    public String getUrlPattern() {
+        return urlPattern;
     }
 
-    public void setUriPattern(String uriPattern) {
-        this.uriPattern = uriPattern;
+    public void setUrlPattern(String urlPattern) {
+        this.urlPattern = urlPattern;
     }
 
     public Map<String, String> getHeaders() {
@@ -55,7 +55,7 @@ public class WireMockReqDTO {
         return "WireMockReqDTO{" +
                 "method='" + method + '\'' +
                 ", uri='" + url + '\'' +
-                ", uriPattern='" + uriPattern + '\'' +
+                ", uriPattern='" + urlPattern + '\'' +
                 ", headers=" + headers +
                 ", body=" + body +
                 '}';
