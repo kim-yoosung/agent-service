@@ -12,12 +12,14 @@ import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.nio.charset.StandardCharsets;
 
 public class IncomingReqResFilter {
 
     public static void captureResponse(CustomResponseWrapper responseWrapper, WiremockDTO dto) throws IOException {
-        byte[] responseBody = responseWrapper.toByteArray();
-        String responseBodyString = new String(responseBody, "UTF-8");
+        byte[] responseBody = responseWrapper.getCapturedBodyAsBytes();
+        String responseBodyString = new String(responseBody, StandardCharsets.UTF_8);
+        
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
 
