@@ -18,7 +18,7 @@ import java.util.List;
 
 public class OutgingUtils {
 
-    private static final String SELF_SERVICE_NAME = "nucm";
+    private static final String SELF_SERVICE_NAME = "";
     private static final String[] EXCLUDE_URI_KEYWORDS = { "multiGet" };
     private static final List<String> INACTIVE_SERVER_LIST = Arrays.asList(
             "http://nucube.tpusv-aws.lguplus.co.kr",

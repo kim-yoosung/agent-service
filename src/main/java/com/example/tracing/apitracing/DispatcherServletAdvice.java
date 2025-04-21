@@ -4,6 +4,7 @@ import com.example.tracing.dto.WireMockReqDTO;
 import com.example.tracing.dto.WireMockResDTO;
 import com.example.tracing.dto.WiremockDTO;
 import com.example.tracing.logging.DynamicLogFileGenerator;
+import com.example.tracing.sockettracing.SocketInterceptor;
 import net.bytebuddy.asm.Advice;
 
 

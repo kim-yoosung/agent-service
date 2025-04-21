@@ -4,46 +4,29 @@ import com.example.tracing.apitracing.DispatcherServletAdvice;
 import com.example.tracing.dbtracing.PrepareStatementExecuteAdvice;
 import com.example.tracing.logging.DynamicLogFileGenerator;
 import com.example.tracing.outgingtracing.RestTemplateInterceptor;
+import com.example.tracing.sockettracing.SocketInterceptor;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
-import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
-import net.bytebuddy.utility.JavaModule;
-import net.bytebuddy.dynamic.DynamicType;
 
+import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 import java.sql.PreparedStatement;
+import java.util.jar.JarFile;
 
-import static net.bytebuddy.matcher.ElementMatchers.hasSuperType;
-import static net.bytebuddy.matcher.ElementMatchers.named;
+import static java.lang.System.exit;
+import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class AgentMain {
 
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("[Agent] 🚀 자바 에이전트 시작됨, Spring Boot 실행 대기 중...");
 
-        // 로그 확인용 Listener 추가
-        AgentBuilder.Listener listener = new AgentBuilder.Listener.Adapter() {
-            @Override
-            public void onDiscovery(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
-                if (typeName.contains("DispatcherServlet")) {
-                    System.out.println("[Agent] 🔍 발견된 클래스: " + typeName + " | loaded: " + loaded);
-                }
-            }
+        System.out.println("[Agent] Jar file path: " + AgentConfig.getOwnJarPath());
 
-            @Override
-            public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader,
-                                         JavaModule module, boolean loaded, DynamicType dynamicType) {
-                System.out.println("[Agent] ✅ 후킹 성공: " + typeDescription.getName());
-            }
+        appendToBootstrap(inst);
 
-            @Override
-            public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
-                System.err.println("[Agent] ❌ 후킹 에러 발생: " + typeName);
-                throwable.printStackTrace();
-            }
-        };
 
         DynamicLogFileGenerator.initLogger();
         DynamicLogFileGenerator.log("[Agent] 🚀 자바 에이전트 시작됨");
@@ -63,7 +46,6 @@ public class AgentMain {
         // OutgoingHttp 후킹
         new AgentBuilder.Default()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                .with(listener)
                 .type(ElementMatchers.hasSuperType(named("org.springframework.web.client.RestTemplate")))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder.method(ElementMatchers.named("doExecute"))
@@ -83,5 +65,25 @@ public class AgentMain {
                                 .intercept(Advice.to(PrepareStatementExecuteAdvice.class))
                 )
                 .installOn(inst);
+
+        // Socket 후킹
+        new AgentBuilder.Default()
+                .ignore(none())
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .type(named("java.net.Socket"))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
+                        builder
+                                .visit(Advice.to(SocketInterceptor.class).on(named("connect")))
+                )
+                .installOn(inst);
+    }
+
+    private static void appendToBootstrap(Instrumentation inst) {
+        try {
+            inst.appendToBootstrapClassLoaderSearch(new JarFile(AgentConfig.getOwnJarPath()));
+        } catch (IOException e) {
+            System.out.println("[Agent] Failed to load jar file: " + AgentConfig.getOwnJarPath() + ", " + e.getMessage());
+            exit(1);
+        }
     }
 }
