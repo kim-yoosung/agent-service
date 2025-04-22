@@ -49,7 +49,7 @@ public class PrepareStatementExecuteAdvice {
         String sql = SqlUtils.extractSqlFromPreparedStatement(stmt.toString()).toLowerCase();
         return !sql.contains("hibernate_sequence") &&
                 !sql.contains(".message") &&
-                !sql.contains("_seq") &&
+                !sql.contains("_SEQ") &&
                 !sql.contains("count(*)") &&
                 !sql.equals(previousQuery);
     }
