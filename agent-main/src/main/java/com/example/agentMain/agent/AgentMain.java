@@ -3,7 +3,6 @@ package com.example.agentMain.agent;
 import com.example.agentMain.tracing.apitracing.DispatcherServletAdvice;
 import com.example.agentMain.tracing.apitracing.SocketInterceptor;
 import com.example.agentMain.tracing.dbtracing.PrepareStatementExecuteAdvice;
-import com.example.logging.DynamicLogFileGenerator;
 import com.example.agentMain.tracing.outgingtracing.RestTemplateInterceptor;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -26,11 +25,6 @@ public class AgentMain {
         System.out.println("[Agent] Retransform Supported = " + inst.isRetransformClassesSupported());
 
         appendToBootstrap(inst);
-
-
-        DynamicLogFileGenerator.initLogger();
-        DynamicLogFileGenerator.log("[Agent] 🚀 자바 에이전트 시작됨");
-        DynamicLogFileGenerator.finishLogger();
 
         // DispatcherServlet 후킹
         new AgentBuilder.Default()
