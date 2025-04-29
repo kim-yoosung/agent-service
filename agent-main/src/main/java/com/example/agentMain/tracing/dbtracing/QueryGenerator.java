@@ -10,17 +10,14 @@ public class QueryGenerator {
         sql = sql.toLowerCase().trim();
 
         if (sql.startsWith("update")) {
-            System.out.println("update query!!!!!");
             String table = getTableNameFromUpdateQuery(sql);
             String where = getWhereClause(sql);
             return (table != null && where != null) ? "SELECT * FROM " + table + " " + where : null;
         } else if (sql.startsWith("delete")) {
-            System.out.println("delete query!!!!!");
             String table = getTableNameFromDeleteQuery(sql);
             String where = getWhereClause(sql);
             return (table != null && where != null) ? "SELECT * FROM " + table + " " + where : null;
         } else if (sql.startsWith("select")) {
-            System.out.println("select query!!!!!");
             return getAllColumnFromSelectQuery(sql);
         } else {
             System.out.println("generated select query fail.");

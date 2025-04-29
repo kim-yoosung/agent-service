@@ -1,5 +1,6 @@
 package com.example.agentMain.tracing.outgingtracing;
 
+import com.example.agentMain.agent.AgentMain;
 import com.example.agentMain.tracing.dto.WireMockReqDTO;
 import com.example.logging.DynamicLogFileGenerator;
 import com.example.agentMain.tracing.dto.WireMockResDTO;
@@ -18,7 +19,8 @@ import java.util.List;
 
 public class OutgingUtils {
 
-    private static final String SELF_SERVICE_NAME = "";
+    private static String SELF_SERVICE_NAME = AgentMain.serviceName;
+
     private static final String[] EXCLUDE_URI_KEYWORDS = { "multiGet" };
     private static final List<String> INACTIVE_SERVER_LIST = Arrays.asList(
             "http://nucube.tpusv-aws.lguplus.co.kr",
@@ -27,14 +29,14 @@ public class OutgingUtils {
 
     public static boolean shouldSkipRequest(String method, String uri, String serviceName) {
         if (!"GET".equalsIgnoreCase(method) && containsExcludedKeyword(uri)) {
-            System.out.println("[Agent] ignore case. method: " + method);
-            DynamicLogFileGenerator.log("Outging ReqResInterceptor: " + "[IGNORE] This request may cause data to be written. Skip this testcase.");
+            System.out.println("[Agent] OutgoingReqResInterceptor: " + "[IGNORE] This request may cause data to be written. Skip this testcase");
+            DynamicLogFileGenerator.log("OutgoingReqResInterceptor: " + "[IGNORE] This request may cause data to be written. Skip this testcase");
             return true;
         }
 
         if (SELF_SERVICE_NAME.equalsIgnoreCase(serviceName)) {
-            System.out.println("[Agent] ignore. 자기 자신 호출");
-            DynamicLogFileGenerator.log("Outging ReqResInterceptor: " + "[IGNORE] This request calls its own service.");
+            System.out.println("[Agent] OutgoingReqResInterceptor: " + "[IGNORE] This request calls its own service.");
+            DynamicLogFileGenerator.log("OutgoingReqResInterceptor: " + "[IGNORE] This request calls its own service.");
             return true;
         }
         return false;
@@ -107,7 +109,8 @@ public class OutgingUtils {
 
         String jsonString = mapper.writeValueAsString(wiremockDTO);
         String jsonPath = createJsonFile(jsonString);
-        DynamicLogFileGenerator.log("OutgingReqResInterceptor: " + jsonPath);
+        DynamicLogFileGenerator.log("OutgoingReqResInterceptor: " + jsonPath);
+        System.out.println("[Agent] OutgoingReqResInterceptor: " + jsonPath);
     }
 
     public static void modifyJsonNode(WiremockDTO wiremockDTO, JsonNode rootNode) {

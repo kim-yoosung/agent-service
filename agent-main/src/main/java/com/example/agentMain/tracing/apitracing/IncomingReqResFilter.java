@@ -49,7 +49,8 @@ public class IncomingReqResFilter {
 
         String jsonString = objectMapper.writeValueAsString(rootNode);
         String jsonPath = createJsonFile(jsonString);
-        DynamicLogFileGenerator.log("IncomingReqResFilter:" + jsonPath);
+        DynamicLogFileGenerator.log("IncomingReqResFilter: " + jsonPath);
+        System.out.println("[Agent] IncomingReqResFilter: " + jsonPath + "\n");
     }
 
     public static WireMockReqDTO getWireMockReqDTO(CustomRequestWrapper request) throws IOException {

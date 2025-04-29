@@ -51,6 +51,8 @@ public class PrepareStatementExecuteAdvice {
                 !sql.contains(".message") &&
                 !sql.contains("_SEQ") &&
                 !sql.contains("count(*)") &&
+                !sql.contains("wf.") &&
+                !sql.contains("ev.") &&
                 !sql.equals(previousQuery);
     }
 
@@ -84,7 +86,6 @@ public class PrepareStatementExecuteAdvice {
     public static String generatePreProcessingQuery(PreparedStatement stmt, Object[] args, String sql) {
         String writtenBlobFilePath = "";
 
-
         if (sql.toLowerCase().contains("insert")) {
             return writtenBlobFilePath;
         }
@@ -101,22 +102,17 @@ public class PrepareStatementExecuteAdvice {
             // --- 커넥션 가져오기 로그 추가 --- 
             java.sql.Connection connection = null;
             try {
-                System.out.println("[Agent Debug] generatePreProcessingQuery: Attempting to get connection from original statement...");
                 connection = stmt.getConnection();
                 if (connection != null) {
-                    System.out.println("[Agent Debug] generatePreProcessingQuery: Connection obtained successfully. Closed: " + connection.isClosed());
                 } else {
-                    System.err.println("[Agent Error] generatePreProcessingQuery: stmt.getConnection() returned null!");
                     return ""; // 커넥션 없으면 진행 불가
                 }
             } catch (SQLException connEx) {
-                System.err.println("[Agent Error] generatePreProcessingQuery: SQLException while getting connection: " + connEx.getMessage());
                 connEx.printStackTrace();
                 return ""; // 커넥션 얻기 실패 시 진행 불가
             }
             // --- 로그 추가 끝 ---
 
-            System.out.println("[Agent Debug] generatePreProcessingQuery: Preparing select statement using the obtained connection...");
             // 커넥션에서 SELECT용 PreparedStatement 생성
             PreparedStatement selectStmt = connection.prepareStatement(
                     selectQuery,
@@ -125,7 +121,6 @@ public class PrepareStatementExecuteAdvice {
             );
 
             // 파라미터가 있으면 바인딩
-            System.out.println("[Agent - DB] 바인딩 직전");
             if (args != null) {
                 for (int i = 0; i < args.length; i++) {
                     selectStmt.setObject(i + 1, args[i]);
@@ -135,12 +130,8 @@ public class PrepareStatementExecuteAdvice {
                 System.out.println("[Agent - DB] 파라미터가 없음");
             }
 
-            System.out.println("[Agent - DB] 쿼리 실행 직전");
-
             // 쿼리 실행
             ResultSet rs = selectStmt.executeQuery();
-            System.out.println("[Agent - DB] 쿼리 실행 직후");
-
 
             // 결과가 없으면 스킵
             rs.last();
@@ -149,10 +140,8 @@ public class PrepareStatementExecuteAdvice {
                 System.out.println("[Agent - DB] rowCount 0");
                 return "";
             }
-            System.out.println("[Agent - DB] beforeFirst 0");
-
             rs.beforeFirst();
-            System.out.println("[Agent - DB] beforeFirst 1");
+            System.out.println("[Agent - DB] after beforeFirst 1");
 
 
             // 파일 경로 생성

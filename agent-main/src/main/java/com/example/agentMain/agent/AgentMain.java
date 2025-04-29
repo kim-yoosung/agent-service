@@ -18,6 +18,7 @@ import java.util.jar.JarFile;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class AgentMain {
+    public static String serviceName;
 
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("[Agent] 🚀 자바 에이전트 시작됨, Spring Boot 실행 대기 중...");
@@ -25,6 +26,16 @@ public class AgentMain {
         System.out.println("[Agent] Retransform Supported = " + inst.isRetransformClassesSupported());
 
         appendToBootstrap(inst);
+
+        if (agentArgs != null) {
+            for (String arg : agentArgs.split(",")) {
+                String[] keyValue = arg.split("=", 2);
+                if (keyValue.length == 2 && "service".equals(keyValue[0])) {
+                    serviceName = keyValue[1].toLowerCase();
+                    System.out.println("Service name is: " + serviceName);
+                }
+            }
+        }
 
         // DispatcherServlet 후킹
         new AgentBuilder.Default()
