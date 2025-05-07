@@ -17,6 +17,8 @@ public class DynamicLogFileGenerator {
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
             writerHolder.set(writer);
+            System.out.println("[Agent] Incoming Request/Response Filter Initialized");
+            DynamicLogFileGenerator.log("Incoming Request/Response Filter Initialized. " + fileName);
         } catch (IOException e) {
             e.printStackTrace();
         }

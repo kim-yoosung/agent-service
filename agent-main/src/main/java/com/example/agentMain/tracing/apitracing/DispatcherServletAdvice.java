@@ -35,7 +35,7 @@ public class DispatcherServletAdvice {
             responseWrapperHolder.set(wrappedResponse);
 
         } catch (Exception e) {
-            System.err.println("[Agent] OnEnter 오류: " + e.getMessage());
+            System.err.println("[Agent] OnEnter error: " + e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class DispatcherServletAdvice {
             IncomingReqResFilter.logWiremockDTO(dto);
 
         } catch (Exception e) {
-            System.err.println("[Agent] OnExit 로깅 오류: " + e.getMessage());
+            System.err.println("[Agent] OnExit error: " + e.getMessage());
         } finally {
             wiremockHolder.remove();
             requestWrapperHolder.remove();
