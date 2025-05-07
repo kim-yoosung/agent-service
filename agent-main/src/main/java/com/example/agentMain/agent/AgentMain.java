@@ -1,7 +1,9 @@
 package com.example.agentMain.agent;
 
 import com.example.agentMain.tracing.apitracing.DispatcherServletAdvice;
-import com.example.agentMain.tracing.apitracing.SocketInterceptor;
+import com.example.agentMain.tracing.sockettracing.GetInputStreamAdvice;
+import com.example.agentMain.tracing.sockettracing.GetOutputStreamAdvice;
+import com.example.agentMain.tracing.sockettracing.SocketInterceptor;
 import com.example.agentMain.tracing.dbtracing.PrepareStatementExecuteAdvice;
 import com.example.agentMain.tracing.outgingtracing.RestTemplateInterceptor;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -79,6 +81,8 @@ public class AgentMain {
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder
                                 .visit(Advice.to(SocketInterceptor.class).on(named("connect")))
+                                .visit(Advice.to(GetInputStreamAdvice.class).on(named("getInputStream")))
+                                .visit(Advice.to(GetOutputStreamAdvice.class).on(named("getOutputStream")))
                 )
                 .installOn(inst);
     }
