@@ -23,7 +23,6 @@ public class PrepareStatementExecuteAdvice {
                                @Advice.Origin Method method,
                                @Advice.AllArguments Object[] args) {
         try {
-            // 현재 트랜잭션 ID 가져오기
             String txId = DynamicLogFileGenerator.getCurrentTransactionId();
             DynamicLogFileGenerator.setCurrentTransaction(txId);
             

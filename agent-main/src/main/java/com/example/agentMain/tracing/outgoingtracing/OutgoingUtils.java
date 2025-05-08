@@ -109,13 +109,8 @@ public class OutgoingUtils {
 
         String jsonString = mapper.writeValueAsString(wiremockDTO);
         String jsonPath = createJsonFile(jsonString);
-        System.out.println("[Agent] OutgoingReqResInterceptor test11!");
-        System.out.println("[Agent] current thread in RestTemplateInterceptor: " + Thread.currentThread().getName());
-        DynamicLogFileGenerator.log("OutgoingReqResInterceptor test11");
         DynamicLogFileGenerator.log("OutgoingReqResInterceptor: " + jsonPath);
         System.out.println("[Agent] OutgoingReqResInterceptor: " + jsonPath);
-        System.out.println("[Agent] OutgoingReqResInterceptor test22");
-        DynamicLogFileGenerator.log("OutgoingReqResInterceptor test22");
     }
 
     public static void modifyJsonNode(WiremockDTO wiremockDTO, JsonNode rootNode) {

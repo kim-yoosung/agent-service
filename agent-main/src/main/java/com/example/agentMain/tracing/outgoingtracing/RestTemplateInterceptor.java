@@ -1,56 +1,83 @@
 package com.example.agentMain.tracing.outgoingtracing;
 
+import com.example.logging.DynamicLogFileGenerator;
 import net.bytebuddy.implementation.bind.annotation.*;
 import java.util.concurrent.Callable;
+import java.lang.reflect.Method;
 
 import static com.example.agentMain.tracing.outgoingtracing.OutgoingUtils.filterInactiveUrl;
 
 public class RestTemplateInterceptor {
 
+    private static final String TRANSACTION_ID_HEADER = "X-Transaction-ID";
+
     @RuntimeType
     public static Object intercept(@SuperCall Callable<Object> zuper,
                                    @AllArguments Object[] args) throws Exception {
-
-        Object uri = args[0];
-        Object httpMethod = args[1];
-
-        String uriStr = filterInactiveUrl(uri.toString());
-        System.out.println("[agent - interceptor] uri " + uriStr);
-        System.out.println("[agent - interceptor] httpMethod " + httpMethod);
-
-        String serviceName = OutgoingUtils.extractServiceName(uriStr);
-        System.out.println("[agent - interceptor] serviceName" + serviceName);
-
-        // if true 인 경우 요청을 빈값으로 보내는 작업 필요
-        if (OutgoingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
-            return zuper.call(); // 요청 무시
-        }
-
-        // 원래 요청을 그대로 실행
-        Object responseObj = zuper.call();
-        
-        // 응답 감싸기 및 Wiremock 저장
         try {
-            if (responseObj != null) {
-                // ResponseEntity 타입 체크
-                if (responseObj.getClass().getName().equals("org.springframework.http.ResponseEntity")) {
+            String txId = DynamicLogFileGenerator.getCurrentTransactionId();
+            
+            // 트랜잭션 ID가 있을 때만 헤더에 추가하고 로깅
+            if (txId != null && args != null && args.length > 0) {
+                Object request = args[0];
+                // Reflection을 사용하여 HttpRequest 타입 체크
+                if (request != null && request.getClass().getName().contains("HttpRequest")) {
+                    try {
+                        // Reflection으로 getHeaders 메소드 호출
+                        Method getHeadersMethod = request.getClass().getMethod("getHeaders");
+                        Object headers = getHeadersMethod.invoke(request);
+                        
+                        // set 메소드 호출
+                        Method setMethod = headers.getClass().getMethod("set", String.class, String.class);
+                        setMethod.invoke(headers, TRANSACTION_ID_HEADER, txId);
+                    } catch (Exception e) {
+                        System.err.println("[RestTemplate] Failed to set header: " + e.getMessage());
+                    }
+                }
 
-                    // 리플렉션을 사용하여 getBody() 메서드 호출
+            }
+
+            Object uri = args[0];
+            Object httpMethod = args[1];
+
+            String uriStr = filterInactiveUrl(uri.toString());
+            System.out.println("[agent - interceptor] uri: " + uriStr);
+            System.out.println("[agent - interceptor] httpMethod: " + httpMethod);
+
+            String serviceName = OutgoingUtils.extractServiceName(uriStr);
+            System.out.println("[agent - interceptor] serviceName: " + serviceName);
+
+            if (OutgoingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
+                return zuper.call();
+            }
+
+            Object responseObj = zuper.call();
+            
+            try {
+                if (responseObj != null && responseObj.getClass().getName().equals("org.springframework.http.ResponseEntity")) {
                     Object body = responseObj.getClass().getMethod("getBody").invoke(responseObj);
                     if (body != null) {
-                        // ClientHttpResponseWrapper 생성 시 리플렉션 사용
                         ClientHttpResponseWrapper wrapper = (ClientHttpResponseWrapper) Class.forName("com.example.agentMain.tracing.outgoingtracing.ClientHttpResponseWrapper")
                             .getConstructor(Object.class)
                             .newInstance(body);
                         OutgoingUtils.handleWiremockLogging(args, wrapper);
                     }
                 }
+            } catch (Exception e) {
+                System.out.println("[agent - interceptor] Wiremock logging error: " + e.getMessage());
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            System.out.println("[agent - interceptor] Wiremock logging error: " + e.getMessage());
-            e.printStackTrace();
-        }
 
-        return responseObj;
+            return responseObj;
+        } catch (Exception e) {
+            String txId = DynamicLogFileGenerator.getCurrentTransactionId();
+            String errorMsg = "[RestTemplate] Exception during request: " + e.getMessage();
+            if (txId != null) {
+                errorMsg += " (TxID: " + txId + ")";
+            }
+            DynamicLogFileGenerator.log(errorMsg);
+            System.err.println(errorMsg);
+            throw e;
+        }
     }
 }
