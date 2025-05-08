@@ -22,9 +22,6 @@ public class DispatcherServletAdvice {
         try {
             DynamicLogFileGenerator.initLogger();
 
-            System.out.println("[Agent] Incoming Request/Response Filter Initialized");
-            DynamicLogFileGenerator.log("Incoming Request/Response Filter Initialized");
-
             CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
             CustomResponseWrapper wrappedResponse = new CustomResponseWrapper(response);
 

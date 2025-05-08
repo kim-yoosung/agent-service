@@ -23,7 +23,6 @@ public class PrepareStatementExecuteAdvice {
                                @Advice.Origin Method method,
                                @Advice.AllArguments Object[] args) {
         try {
-            System.out.println("[Agent] DB tracing start");
             boolean isTarget = isTargetQuery(stmt);
 
             if (isTarget) {
@@ -93,7 +92,6 @@ public class PrepareStatementExecuteAdvice {
         // 전 쿼리용 SELECT 생성
         String selectQuery = QueryGenerator.generateSelectQuery(sql);
         if (selectQuery == null) {
-            System.out.println("[Agent] 전 쿼리 SELECT 생성 실패");
             return writtenBlobFilePath;
         }
 
@@ -141,8 +139,6 @@ public class PrepareStatementExecuteAdvice {
                 return "";
             }
             rs.beforeFirst();
-            System.out.println("[Agent - DB] after beforeFirst 1");
-
 
             // 파일 경로 생성
             String fileName = "blob-" + System.currentTimeMillis() + ".dat";
