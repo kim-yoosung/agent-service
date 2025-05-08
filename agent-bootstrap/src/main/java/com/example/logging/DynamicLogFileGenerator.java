@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class DynamicLogFileGenerator {
 
-    private static final ThreadLocal<BufferedWriter> writerHolder = new ThreadLocal<>();
+    public static final ThreadLocal<BufferedWriter> writerHolder = new ThreadLocal<>();
 
     public static void initLogger() {
         try {
@@ -19,6 +19,7 @@ public class DynamicLogFileGenerator {
             writerHolder.set(writer);
             System.out.println("[Agent] Incoming Request/Response Filter Initialized." + fileName);
             DynamicLogFileGenerator.log("Incoming Request/Response Filter Initialized. " + fileName);
+            System.out.println("[Agent] current thread in DispatcherServletAdvice: " + Thread.currentThread().getName());
         } catch (IOException e) {
             e.printStackTrace();
         }
