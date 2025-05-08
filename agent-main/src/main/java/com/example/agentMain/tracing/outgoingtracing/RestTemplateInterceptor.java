@@ -1,9 +1,9 @@
-package com.example.agentMain.tracing.outgingtracing;
+package com.example.agentMain.tracing.outgoingtracing;
 
 import net.bytebuddy.implementation.bind.annotation.*;
 import java.util.concurrent.Callable;
 
-import static com.example.agentMain.tracing.outgingtracing.OutgingUtils.filterInactiveUrl;
+import static com.example.agentMain.tracing.outgoingtracing.OutgoingUtils.filterInactiveUrl;
 
 public class RestTemplateInterceptor {
 
@@ -18,11 +18,11 @@ public class RestTemplateInterceptor {
         System.out.println("[agent - interceptor] uri " + uriStr);
         System.out.println("[agent - interceptor] httpMethod " + httpMethod);
 
-        String serviceName = OutgingUtils.extractServiceName(uriStr);
+        String serviceName = OutgoingUtils.extractServiceName(uriStr);
         System.out.println("[agent - interceptor] serviceName" + serviceName);
 
         // if true 인 경우 요청을 빈값으로 보내는 작업 필요
-        if (OutgingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
+        if (OutgoingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
             return zuper.call(); // 요청 무시
         }
 
@@ -39,10 +39,10 @@ public class RestTemplateInterceptor {
                     Object body = responseObj.getClass().getMethod("getBody").invoke(responseObj);
                     if (body != null) {
                         // ClientHttpResponseWrapper 생성 시 리플렉션 사용
-                        ClientHttpResponseWrapper wrapper = (ClientHttpResponseWrapper) Class.forName("com.example.agentMain.tracing.outgingtracing.ClientHttpResponseWrapper")
+                        ClientHttpResponseWrapper wrapper = (ClientHttpResponseWrapper) Class.forName("com.example.agentMain.tracing.outgoingtracing.ClientHttpResponseWrapper")
                             .getConstructor(Object.class)
                             .newInstance(body);
-                        OutgingUtils.handleWiremockLogging(args, wrapper);
+                        OutgoingUtils.handleWiremockLogging(args, wrapper);
                     }
                 }
             }
