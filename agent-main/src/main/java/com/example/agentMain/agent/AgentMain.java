@@ -5,7 +5,7 @@ import com.example.agentMain.tracing.sockettracing.GetInputStreamAdvice;
 import com.example.agentMain.tracing.sockettracing.GetOutputStreamAdvice;
 import com.example.agentMain.tracing.sockettracing.SocketInterceptor;
 import com.example.agentMain.tracing.dbtracing.PrepareStatementExecuteAdvice;
-import com.example.agentMain.tracing.outgoingtracing.RestTemplateInterceptor;
+import com.example.agentMain.tracing.outgingtracing.RestTemplateInterceptor;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.MethodDelegation;

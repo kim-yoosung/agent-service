@@ -1,4 +1,4 @@
-package com.example.agentMain.tracing.outgoingtracing;
+package com.example.agentMain.tracing.outgingtracing;
 
 import com.example.agentMain.agent.AgentMain;
 import com.example.agentMain.tracing.dto.WireMockReqDTO;
@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class OutgoingUtils {
+public class OutgingUtils {
 
     private static String SELF_SERVICE_NAME = AgentMain.serviceName;
 
