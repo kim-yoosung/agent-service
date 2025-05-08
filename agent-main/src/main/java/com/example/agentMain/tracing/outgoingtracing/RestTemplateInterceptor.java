@@ -17,7 +17,7 @@ public class RestTemplateInterceptor {
         try {
             String txId = DynamicLogFileGenerator.getCurrentTransactionId();
             
-            // 트랜잭션 ID가 있을 때만 헤더에 추가하고 로깅
+            // 트랜잭션 ID가 있을 때만 헤더에 추가
             if (txId != null && args != null && args.length > 0) {
                 Object request = args[0];
                 // Reflection을 사용하여 HttpRequest 타입 체크
@@ -34,18 +34,12 @@ public class RestTemplateInterceptor {
                         System.err.println("[RestTemplate] Failed to set header: " + e.getMessage());
                     }
                 }
-
             }
 
             Object uri = args[0];
             Object httpMethod = args[1];
-
             String uriStr = filterInactiveUrl(uri.toString());
-            System.out.println("[agent - interceptor] uri: " + uriStr);
-            System.out.println("[agent - interceptor] httpMethod: " + httpMethod);
-
             String serviceName = OutgoingUtils.extractServiceName(uriStr);
-            System.out.println("[agent - interceptor] serviceName: " + serviceName);
 
             if (OutgoingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
                 return zuper.call();
@@ -64,19 +58,12 @@ public class RestTemplateInterceptor {
                     }
                 }
             } catch (Exception e) {
-                System.out.println("[agent - interceptor] Wiremock logging error: " + e.getMessage());
-                e.printStackTrace();
+                System.err.println("[RestTemplate] Failed to handle wiremock logging: " + e.getMessage());
             }
 
             return responseObj;
         } catch (Exception e) {
-            String txId = DynamicLogFileGenerator.getCurrentTransactionId();
-            String errorMsg = "[RestTemplate] Exception during request: " + e.getMessage();
-            if (txId != null) {
-                errorMsg += " (TxID: " + txId + ")";
-            }
-            DynamicLogFileGenerator.log(errorMsg);
-            System.err.println(errorMsg);
+            System.err.println("[RestTemplate] Exception during request: " + e.getMessage());
             throw e;
         }
     }
