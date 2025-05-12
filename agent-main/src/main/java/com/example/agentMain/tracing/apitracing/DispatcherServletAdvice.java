@@ -5,54 +5,43 @@ import com.example.agentMain.tracing.dto.WireMockReqDTO;
 import com.example.agentMain.tracing.dto.WireMockResDTO;
 import com.example.agentMain.tracing.dto.WiremockDTO;
 import net.bytebuddy.asm.Advice;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
+
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.UUID;
 
 public class DispatcherServletAdvice {
 
-    private static final String TRANSACTION_ID_HEADER = "X-Transaction-ID";
     public static final ThreadLocal<WiremockDTO> wiremockHolder = new ThreadLocal<>();
     public static final ThreadLocal<CustomRequestWrapper> requestWrapperHolder = new ThreadLocal<>();
     public static final ThreadLocal<CustomResponseWrapper> responseWrapperHolder = new ThreadLocal<>();
 
     @Advice.OnMethodEnter
-    public static void onEnter(@Advice.Argument(value = 0, typing = Assigner.Typing.DYNAMIC) Object request) {
-        if (request instanceof HttpServletRequest) {
-            HttpServletRequest httpRequest = (HttpServletRequest) request;
-            String transactionId = httpRequest.getHeader(TRANSACTION_ID_HEADER);
-            
-            if (transactionId == null) {
-                transactionId = System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8);
-            }
-            
-            DynamicLogFileGenerator.initLogger(transactionId);
-            DynamicLogFileGenerator.setCurrentTransaction(transactionId);
-        }
-    }
-
-    @Advice.OnMethodExit
-    public static void onExit(@Advice.Argument(value = 0, typing = Assigner.Typing.DYNAMIC) Object request,
-                             @Advice.Argument(value = 1, typing = Assigner.Typing.DYNAMIC) Object response) {
+    public static void onEnter(@Advice.Argument(value = 0, readOnly = false) HttpServletRequest request,
+                               @Advice.Argument(value = 1, readOnly = false) HttpServletResponse response) {
         try {
-            if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
-                HttpServletResponse httpResponse = (HttpServletResponse) response;
-                String transactionId = DynamicLogFileGenerator.getCurrentTransactionId();
-                if (transactionId != null) {
-                    httpResponse.setHeader(TRANSACTION_ID_HEADER, transactionId);
-                }
-            }
-        } finally {
-            DynamicLogFileGenerator.finishLogger();
+            DynamicLogFileGenerator.initLogger();
+
+            System.out.println("[Agent] Incoming Request/Response Filter Initialized");
+            DynamicLogFileGenerator.log("Incoming Request/Response Filter Initialized");
+
+            CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
+            CustomResponseWrapper wrappedResponse = new CustomResponseWrapper(response);
+
+            request = wrappedRequest;
+            response = wrappedResponse;
+
+            requestWrapperHolder.set(wrappedRequest);
+            responseWrapperHolder.set(wrappedResponse);
+
+        } catch (Exception e) {
+            System.err.println("[Agent] OnEnter error: " + e.getMessage());
         }
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onExit(@Advice.Thrown Throwable t) {
         try {
-            String txId = DynamicLogFileGenerator.getCurrentTransactionId();
             CustomRequestWrapper requestWrapper = requestWrapperHolder.get();
             CustomResponseWrapper responseWrapper = responseWrapperHolder.get();
 
@@ -74,6 +63,7 @@ public class DispatcherServletAdvice {
             wiremockHolder.remove();
             requestWrapperHolder.remove();
             responseWrapperHolder.remove();
+            DynamicLogFileGenerator.finishLogger();
         }
     }
 

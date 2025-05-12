@@ -1,4 +1,4 @@
-package com.example.agentMain.tracing.outgingtracing;
+package com.example.agentMain.tracing.outgoingtracing;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
