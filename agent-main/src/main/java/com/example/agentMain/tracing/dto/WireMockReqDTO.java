@@ -8,7 +8,7 @@ public class WireMockReqDTO {
     private String url;
     private String urlPattern;
     private Map<String, String> headers;
-    private List<Map<String, String>> body;
+    private List<Map<String, String>> bodyPatterns;
 
     public String getMethod() {
         return method;
@@ -42,12 +42,12 @@ public class WireMockReqDTO {
         this.headers = headers;
     }
 
-    public List<Map<String, String>> getBody() {
-        return body;
+    public List<Map<String, String>> getBodyPatterns() {
+        return bodyPatterns;
     }
 
-    public void setBody(List<Map<String, String>> body) {
-        this.body = body;
+    public void setBodyPatterns(List<Map<String, String>> bodyPatterns) {
+        this.bodyPatterns = bodyPatterns;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class WireMockReqDTO {
                 ", uri='" + url + '\'' +
                 ", uriPattern='" + urlPattern + '\'' +
                 ", headers=" + headers +
-                ", body=" + body +
+                ", body=" + bodyPatterns +
                 '}';
     }
 }

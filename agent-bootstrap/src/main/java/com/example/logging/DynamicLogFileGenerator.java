@@ -7,7 +7,6 @@ import java.io.IOException;
 
 public class DynamicLogFileGenerator {
 
-
     private static BufferedWriter writer;
 
     public static void initLogger() {

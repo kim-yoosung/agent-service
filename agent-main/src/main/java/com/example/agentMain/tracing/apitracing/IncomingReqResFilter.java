@@ -66,7 +66,7 @@ public class IncomingReqResFilter {
         }
         reqDTO.setUrl(fullUri);
         reqDTO.setUrlPattern(fullUri);
-        reqDTO.setBody(buildBodyPatterns(request));
+        reqDTO.setBodyPatterns(buildBodyPatterns(request));
 
         // 헤더 정보 저장
         Map<String, String> headerMap = new HashMap<>(Collections.singletonMap("Content-Type", "application/json"));

@@ -31,16 +31,10 @@ public class RestTemplateInterceptor {
             if (responseObj != null) {
                 // ResponseEntity 타입 체크
                 if (responseObj.getClass().getName().equals("org.springframework.http.ResponseEntity")) {
-
-                    // 리플렉션을 사용하여 getBody() 메서드 호출
-                    Object body = responseObj.getClass().getMethod("getBody").invoke(responseObj);
-                    if (body != null) {
-                        // ClientHttpResponseWrapper 생성 시 리플렉션 사용
-                        ClientHttpResponseWrapper wrapper = (ClientHttpResponseWrapper) Class.forName("com.example.agentMain.tracing.outgoingtracing.ClientHttpResponseWrapper")
-                            .getConstructor(Object.class)
-                            .newInstance(body);
-                        OutgoingUtils.handleWiremockLogging(args, wrapper);
-                    }
+                    ClientHttpResponseWrapper wrapper = (ClientHttpResponseWrapper) Class.forName("com.example.agentMain.tracing.outgoingtracing.ClientHttpResponseWrapper")
+                        .getConstructor(Object.class)
+                        .newInstance(responseObj);
+                    OutgoingUtils.handleWiremockLogging(args, wrapper);
                 }
             }
         } catch (Exception e) {
