@@ -24,7 +24,9 @@ public class OutgoingUtils {
     private static final String[] EXCLUDE_URI_KEYWORDS = { "multiGet" };
     private static final List<String> INACTIVE_SERVER_LIST = Arrays.asList(
             "http://nucube.tpusv-aws.lguplus.co.kr",
-            "http://nucube.tprsv-paas.lguplus.co.kr"
+            "http://nucube.tprsv-paas.lguplus.co.kr",
+            "https://tst-openapi-pv.|guplus.co.kr/uplus/intuser",
+            "https://tst-openapi-pb.lguplus.co.kr/uplus/intuser"
     );
 
     public static boolean shouldSkipRequest(String method, String uri, String serviceName) {
@@ -84,10 +86,11 @@ public class OutgoingUtils {
 
         Object uri = args[0];
         Object httpMethod = args[1];
+        String uriStr = filterInactiveUrl(uri.toString());
 
         WireMockReqDTO reqDTO = new WireMockReqDTO();
-        reqDTO.setUrl(uri.toString());
-        reqDTO.setUrlPattern(uri.toString());
+        reqDTO.setUrl(uriStr);
+        reqDTO.setUrlPattern(uriStr);
         reqDTO.setMethod(httpMethod.toString());
 
         WireMockResDTO resDTO = new WireMockResDTO();
@@ -107,7 +110,7 @@ public class OutgoingUtils {
         JsonNode rootNode = mapper.valueToTree(wiremockDTO);
         modifyJsonNode(wiremockDTO, rootNode);
 
-        String jsonString = mapper.writeValueAsString(wiremockDTO);
+        String jsonString = mapper.writeValueAsString(rootNode);
         String jsonPath = createJsonFile(jsonString);
         DynamicLogFileGenerator.log("OutgoingReqResInterceptor: " + jsonPath);
         System.out.println("[Agent] OutgoingReqResInterceptor: " + jsonPath);
@@ -117,7 +120,6 @@ public class OutgoingUtils {
         if ("GET".equals(wiremockDTO.getRequest().getMethod())) {
             ((ObjectNode) rootNode.get("request")).remove("bodyPatterns");
         }
-
         if (wiremockDTO.getRequest().getUrl().contains("?")) {
             ((ObjectNode) rootNode.get("request")).remove("urlPattern");
         } else {

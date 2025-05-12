@@ -16,10 +16,7 @@ public class RestTemplateInterceptor {
 
         String uriStr = filterInactiveUrl(uri.toString());
         System.out.println("[agent - interceptor] uri " + uriStr);
-        System.out.println("[agent - interceptor] httpMethod " + httpMethod);
-
         String serviceName = OutgoingUtils.extractServiceName(uriStr);
-        System.out.println("[agent - interceptor] serviceName" + serviceName);
 
         // if true 인 경우 요청을 빈값으로 보내는 작업 필요
         if (OutgoingUtils.shouldSkipRequest(httpMethod.toString(), uriStr, serviceName)) {
