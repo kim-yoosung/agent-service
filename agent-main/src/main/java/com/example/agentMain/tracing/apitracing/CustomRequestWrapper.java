@@ -26,9 +26,17 @@ public class CustomRequestWrapper extends HttpServletRequestWrapper {
         }
         this.encoding = Charset.forName(characterEncoding);
 
+        // 본문 읽기 및 null 방지 처리
+        byte[] requestBody = null;
         try (InputStream inputStream = request.getInputStream()) {
-            this.rawData = IOUtils.toByteArray(inputStream);
+            if (inputStream != null) {
+                requestBody = IOUtils.toByteArray(inputStream);
+            }
+        } catch (Exception e) {
+            requestBody = new byte[0]; // 예외 발생 시 비어 있는 본문으로 처리
         }
+
+        this.rawData = (requestBody != null) ? requestBody : new byte[0];
     }
 
     public byte[] getRawData() {
@@ -39,12 +47,13 @@ public class CustomRequestWrapper extends HttpServletRequestWrapper {
         return encoding;
     }
 
-    // 4. getInputStream() 오버라이드하여 저장된 데이터를 다시 읽을 수 있도록 함
     @Override
     public ServletInputStream getInputStream() {
-        final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(this.rawData);
+        final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(
+                this.rawData != null ? this.rawData : new byte[0]
+        );
 
-        ServletInputStream servletInputStream = new ServletInputStream(){
+        return new ServletInputStream() {
             @Override
             public int read() throws IOException {
                 return byteArrayInputStream.read();
@@ -52,19 +61,19 @@ public class CustomRequestWrapper extends HttpServletRequestWrapper {
 
             @Override
             public boolean isFinished() {
-                return false;
+                return byteArrayInputStream.available() == 0;
             }
 
             @Override
             public boolean isReady() {
-                return false;
+                return true;
             }
 
             @Override
-            public void setReadListener(ReadListener readListener) {}
+            public void setReadListener(ReadListener readListener) {
+                // 비동기 처리 없음
+            }
         };
-
-        return servletInputStream;
     }
 
     @Override
