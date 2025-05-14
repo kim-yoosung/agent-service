@@ -9,6 +9,8 @@ import net.bytebuddy.asm.Advice;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class DispatcherServletAdvice {
 
@@ -35,7 +37,20 @@ public class DispatcherServletAdvice {
             responseWrapperHolder.set(wrappedResponse);
 
         } catch (Exception e) {
-            System.err.println("[Agent] OnEnter error: " + e.getMessage());
+            System.err.println("[Agent] OnEnter error: " + e.getClass().getName());
+            System.err.println("[Agent] OnEnter message: " + e.getMessage());
+
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            String exceptionAsString = sw.toString();
+
+            // 콘솔에 출력
+            System.err.println("[Agent] OnEnter stacktrace:\n" + exceptionAsString);
+
+            // 로그 파일에도 기록
+            DynamicLogFileGenerator.log("[Agent] OnEnter error: " + e.getClass().getName());
+            DynamicLogFileGenerator.log("[Agent] OnEnter message: " + e.getMessage());
+            DynamicLogFileGenerator.log("[Agent] OnEnter stacktrace:\n" + exceptionAsString);
         }
     }
 

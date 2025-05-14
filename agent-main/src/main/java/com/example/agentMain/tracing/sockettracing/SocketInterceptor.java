@@ -17,12 +17,14 @@ public class SocketInterceptor {
         Object endpoint = args[0];
         String address = endpoint.toString();
         String ip = "";
+        String port = "";
         int slash = address.indexOf('/');
         int colon = address.indexOf(':');
         if (slash >= 0 && colon > slash) {
             ip = address.substring(slash + 1, colon);
+            port = address.substring(colon + 1);
         }
-        System.out.println("[Agent - socket] " + ip);
+        System.out.println("[Agent - socket] " + ip + ":" + port);
 
         if (InterceptIpConfig.shouldIntercept(ip)) {
             SocketConnectionContext.setCurrentIp(ip);
