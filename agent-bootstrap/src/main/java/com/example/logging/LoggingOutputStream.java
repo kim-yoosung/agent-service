@@ -6,9 +6,14 @@ import java.io.OutputStream;
 
 public class LoggingOutputStream extends OutputStream {
     private final OutputStream delegate;
+    private final String ip;
+    private final String port;
 
-    public LoggingOutputStream(OutputStream delegate) {
+
+    public LoggingOutputStream(OutputStream delegate, String ip, String port) {
         this.delegate = delegate;
+        this.ip = ip;
+        this.port = port;
     }
 
     @Override
@@ -19,8 +24,9 @@ public class LoggingOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        String content = new String(b, off, len, "UTF-8");
-        writeLog("[OUT] " + content);
+        String content = new String(b, off, len, "EUC-KR");
+        writeLog("[Agent Socket] IP: " + ip + " Port: " + port + "\n");
+        writeLog("[OUT byte] " + content);
         delegate.write(b, off, len);
     }
 

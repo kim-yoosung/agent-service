@@ -25,8 +25,8 @@ public class LoggingInputStream extends InputStream {
     public int read(byte[] b, int off, int len) throws IOException {
         int count = delegate.read(b, off, len);
         if (count > 0) {
-            String content = new String(b, off, count, "UTF-8");
-            writeLog("[IN] " + content);
+            String content = new String(b, off, count, "EUC-KR");
+            writeLog("[IN byte] " + content);
         }
         return count;
     }

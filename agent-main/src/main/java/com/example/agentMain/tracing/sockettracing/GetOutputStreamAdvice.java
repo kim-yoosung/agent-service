@@ -14,9 +14,10 @@ public class GetOutputStreamAdvice {
     public static void onExit(@Advice.Return(readOnly = false) OutputStream returned) {
 
         String ip = SocketConnectionContext.getCurrentIp();
+        String port = SocketConnectionContext.getCurrentPort();
         if (ip != null && InterceptIpConfig.shouldIntercept(ip)) {
             System.out.println("[Agent] getOutputStream() 후킹됨 - IP: " + ip);
-            returned = new LoggingOutputStream(returned);
+            returned = new LoggingOutputStream(returned, ip, port);
         }
     }
 }

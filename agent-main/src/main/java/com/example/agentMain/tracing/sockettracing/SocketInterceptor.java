@@ -28,6 +28,7 @@ public class SocketInterceptor {
 
         if (InterceptIpConfig.shouldIntercept(ip)) {
             SocketConnectionContext.setCurrentIp(ip);
+            SocketConnectionContext.setCurrentPort(port);
             String fileName = "logs/" + "socket-" + System.currentTimeMillis() + ".txt";
             SocketLogContext.setFileName(fileName); // 스레드별 고유 파일명 등록
 
