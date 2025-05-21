@@ -14,8 +14,7 @@ public class InterceptIpConfig {
             "172.23.29.11",
             "4.68.0.39",
             "172.17.26.137",
-            "211.115.124.38",
-            "10.0.0.1"
+            "211.115.124.38"
     );
 
     public static boolean shouldIntercept(String ip) {
