@@ -32,7 +32,7 @@ public class SocketInterceptor {
             String fileName = "logs/" + "socket-" + System.currentTimeMillis() + ".txt";
             SocketLogContext.setFileName(fileName); // 스레드별 고유 파일명 등록
 
-            System.out.println("[Agent Socket] " + ip + " 원하는 소켓 ip 호출됨!!!");
+            System.out.println("[Agent Socket] " + ip + " 대상 TCP 소켓 ip 호출");
             DynamicLogFileGenerator.log("SocketInterceptor: " + fileName);
         }
     }
