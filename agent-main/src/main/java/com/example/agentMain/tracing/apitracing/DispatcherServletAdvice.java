@@ -5,6 +5,7 @@ import com.example.agentMain.tracing.dto.WireMockReqDTO;
 import com.example.agentMain.tracing.dto.WireMockResDTO;
 import com.example.agentMain.tracing.dto.WiremockDTO;
 import net.bytebuddy.asm.Advice;
+import org.apache.commons.lang3.StringUtils;
 
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,6 +37,10 @@ public class DispatcherServletAdvice {
             requestWrapperHolder.set(wrappedRequest);
             responseWrapperHolder.set(wrappedResponse);
 
+            String referer = wrappedRequest.getHeader("X-testcase-id");
+            String testcaseId = StringUtils.isNotBlank(referer) ? referer : "agent_log";
+            System.out.println("[Agent - " + Thread.currentThread().getId() + "] testcase id = " + testcaseId);
+
         } catch (Exception e) {
             System.err.println("[Agent] OnEnter error: " + e.getClass().getName());
             System.err.println("[Agent] OnEnter message: " + e.getMessage());
@@ -48,9 +53,9 @@ public class DispatcherServletAdvice {
             System.err.println("[Agent] OnEnter stacktrace:\n" + exceptionAsString);
 
             // 로그 파일에도 기록
-            DynamicLogFileGenerator.log("[Agent] OnEnter error: " + e.getClass().getName());
-            DynamicLogFileGenerator.log("[Agent] OnEnter message: " + e.getMessage());
-            DynamicLogFileGenerator.log("[Agent] OnEnter stacktrace:\n" + exceptionAsString);
+            DynamicLogFileGenerator.log("OnEnter error: " + e.getClass().getName());
+            DynamicLogFileGenerator.log("OnEnter message: " + e.getMessage());
+            DynamicLogFileGenerator.log("OnEnter stacktrace:\n" + exceptionAsString);
         }
     }
 
@@ -73,7 +78,7 @@ public class DispatcherServletAdvice {
             IncomingReqResFilter.logWiremockDTO(dto);
 
         } catch (Exception e) {
-            System.err.println("[Agent] OnExit error: " + e.getMessage());
+            System.err.println("[Agent - " + Thread.currentThread().getId() + "] OnExit error: " + e.getMessage());
         } finally {
             wiremockHolder.remove();
             requestWrapperHolder.remove();

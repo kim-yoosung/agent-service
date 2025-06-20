@@ -15,8 +15,8 @@ public class DynamicLogFileGenerator {
             File logFile = new File(fileName);
             logFile.getParentFile().mkdirs();
             writer = new BufferedWriter(new FileWriter(logFile));
-            writer.write("[Agent] " + fileName + " generated.\n");
-            System.out.println("[Agent] " + fileName + " generated.\n");
+            writer.write("[Agent - " + Thread.currentThread().getId() + "] " + fileName + " generated.\n");
+            System.out.println("[Agent - " + Thread.currentThread().getId() + "] " + fileName + " generated.\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -25,7 +25,7 @@ public class DynamicLogFileGenerator {
     public static void log(String message) {
         try {
             if (writer != null) {
-                writer.write("[Agent] " + message + "\n");
+                writer.write("[Agent - " + Thread.currentThread().getId() + "] " + message + "\n");
                 writer.flush();
             }
         } catch (IOException e) {
