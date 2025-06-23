@@ -37,7 +37,7 @@ public class DispatcherServletAdvice {
             requestWrapperHolder.set(wrappedRequest);
             responseWrapperHolder.set(wrappedResponse);
 
-            String referer = wrappedRequest.getHeader("X-testcase-id");
+            String referer = wrappedRequest.getHeader("testcase_id");
             String testcaseId = StringUtils.isNotBlank(referer) ? referer : "agent_log";
             System.out.println("[Agent - " + Thread.currentThread().getId() + "] testcase id = " + testcaseId);
 
