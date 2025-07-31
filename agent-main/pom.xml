@@ -13,8 +13,8 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
-  <dependencies>
 
+  <dependencies>
     <!-- ByteBuddy -->
     <dependency>
       <groupId>net.bytebuddy</groupId>
@@ -26,17 +26,33 @@
       <artifactId>byte-buddy-agent</artifactId>
       <version>1.14.6</version>
     </dependency>
+
+    <!-- Servlet -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>4.0.1</version>
       <scope>compile</scope>
     </dependency>
+
+    <!-- Jackson: core + databind + annotations 명시 -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.11.2</version>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.11.2</version>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.11.2</version>
+    </dependency>
+
+    <!-- Commons -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
@@ -47,7 +63,8 @@
       <artifactId>commons-io</artifactId>
       <version>2.5</version>
     </dependency>
-    <!-- 에이전트 모듈의 pom.xml -->
+
+    <!-- Spring (provided scope 유지) -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
@@ -60,6 +77,8 @@
       <version>5.3.27</version>
       <scope>provided</scope>
     </dependency>
+
+    <!-- 자체 모듈 -->
     <dependency>
       <groupId>com.example</groupId>
       <artifactId>agent-bootstrap</artifactId>
@@ -81,7 +100,6 @@
             </goals>
             <configuration>
               <transformers>
-                <!-- MANIFEST.MF 파일에 Premain-Class 추가 -->
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Premain-Class>com.example.agentMain.agent.AgentMain</Premain-Class>
@@ -91,6 +109,14 @@
                 </transformer>
               </transformers>
               <createDependencyReducedPom>true</createDependencyReducedPom>
+
+              <!-- Jackson 관련 패키지 리로케이션 추가 -->
+              <relocations>
+                <relocation>
+                  <pattern>com.fasterxml.jackson</pattern>
+                  <shadedPattern>agent.shaded.jackson</shadedPattern>
+                </relocation>
+              </relocations>
               <filters>
                 <filter>
                   <artifact>javax.servlet:javax.servlet-api</artifact>

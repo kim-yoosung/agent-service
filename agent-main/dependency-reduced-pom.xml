@@ -29,6 +29,12 @@
                 </transformer>
               </transformers>
               <createDependencyReducedPom>true</createDependencyReducedPom>
+              <relocations>
+                <relocation>
+                  <pattern>com.fasterxml.jackson</pattern>
+                  <shadedPattern>agent.shaded.jackson</shadedPattern>
+                </relocation>
+              </relocations>
               <filters>
                 <filter>
                   <artifact>javax.servlet:javax.servlet-api</artifact>
