@@ -23,10 +23,6 @@ public class OutgoingUtils {
 
     private static final String[] EXCLUDE_URI_KEYWORDS = { "multiGet" };
     private static final List<String> INACTIVE_SERVER_LIST = Arrays.asList(
-            "http://nucube.tpusv-aws.lguplus.co.kr",
-            "http://nucube.tprsv-paas.lguplus.co.kr",
-            "https://tst-openapi-pv.|guplus.co.kr/uplus/intuser",
-            "https://tst-openapi-pb.lguplus.co.kr/uplus/intuser"
     );
 
     public static boolean shouldSkipRequest(String method, String uri, String serviceName) {
